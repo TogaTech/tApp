@@ -1,12 +1,17 @@
-tApp.config = {
+tApp.configure({
 	target: document.querySelector("tapp-main"),
 	ignoreRoutes: ["#id"],
 	forbiddenRoutes: ["#/forbidden"],
 	errorPages: {
 		notFound: "#/404",
 		forbidden: "#/403"
+	},
+	caching: {
+		maxBytes: 5 * 1000 * 1000, // around 5MB in bytes (5 MB * 1000 KB/MB * 1000 bytes/KB)
+		updateCache: 5 * 60 * 1000, // updates the cache every 5 minutes in milliseconds (5 minutes * 60 seconds/minute * 1000 seconds/millisecond)
+		backgroundRoutes: ["#/", "#/about", "#/text", "#/404", "#/403"]
 	}
-};
+});
 
 tApp.route("/", function(request) {
 	tApp.redirect("#/");

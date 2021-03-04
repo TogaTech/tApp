@@ -1,24 +1,114 @@
 class tApp {
 	static config = {};
 	static routes = {};
+	static cache = {};
+	static cacheSize = 0;
 	static get version() {
-		return "v0.1.0";
+		return "v0.2.0";
+	}
+	static configure(params) {
+		if(params == null) {
+			throw "tAppError: No params specified for configuring."
+		}
+		let validation = tApp.validateConfig(params);
+		if(validation.valid) {
+			tApp.config = validation.params;
+		} else {
+			throw validation.error;
+		}
+	}
+	static validateConfig(params) {
+		if(params.target != null && !(params.target instanceof HTMLElement)) {
+			return {
+				valid: false,
+				error: "tAppError: Invalid configure parameter, target is not of type HTMLElement."
+			}
+		}
+		if(params.ignoreRoutes != null && !(params.ignoreRoutes instanceof Array)) {
+			return {
+				valid: false,
+				error: "tAppError: Invalid configure parameter, ignoreRoutes is not of type Array."
+			}
+		}
+		if(params.forbiddenRoutes != null && !(params.forbiddenRoutes instanceof Array)) {
+			return {
+				valid: false,
+				error: "tAppError: Invalid configure parameter, forbiddenRoutes is not of type Array."
+			}
+		}
+		if(params.errorPages != null && !(params.errorPages instanceof Object)) {
+			return {
+				valid: false,
+				error: "tAppError: Invalid configure parameter, errorPages is not of type Object."
+			}
+		}
+		if(params.caching != null && !(params.caching instanceof Object)) {
+			return {
+				valid: false,
+				error: "tAppError: Invalid configure parameter, caching is not of type Object."
+			}
+		}
+		if(params.caching.backgroundRoutes != null && !(params.caching.backgroundRoutes instanceof Array)) {
+			return {
+				valid: false,
+				error: "tAppError: Invalid configure parameter, caching.backgroundRoutes is not of type Array."
+			}
+		}
+		if(params.caching != null && params.caching.maxBytes == null) {
+			params.caching.maxBytes = Infinity;
+		}
+		if(params.caching != null && params.caching.updateCache == null) {
+			params.caching.updateCache = Infinity;
+		}
+		if(params.caching != null && params.caching.backgroundRoutes == null) {
+			params.caching.backgroundRoutes = [];
+		}
+		return {
+			valid: true,
+			params: params
+		};
 	}
 	static route(path, renderFunction) {
 		tApp.routes[path] = renderFunction;
 	}
 	static get(path) {
 		return new Promise((resolve, reject) => {
-			let xhr = new XMLHttpRequest();
-			xhr.onreadystatechange = function() { 
-				if (xhr.readyState == 4 && xhr.status == 200) {
-					resolve(xhr.responseText);
+			let fullPath = new URL(path, window.location.href).href;
+			if(tApp.config.caching == null || (tApp.cache[fullPath] == null || tApp.cache[fullPath].cachedAt + tApp.config.caching.updateCache < new Date().getTime())) {
+				let xhr = new XMLHttpRequest();
+				xhr.onreadystatechange = function() {
+					if (xhr.readyState === 4) {
+						if (xhr.status === 200) {
+							if(tApp.cache[fullPath] != null) {
+								tApp.cacheSize -= new Blob([tApp.cache[fullPath].data]).size;
+							}
+							let size = new Blob([xhr.responseText]).size;
+							while(tApp.cacheSize + size > tApp.config.caching.maxBytes) {
+								let keys = Object.keys(tApp.cache);
+								let num = Math.floor(Math.random() * keys.length);
+								if(num < keys.length) {
+									tApp.cacheSize -= new Blob([tApp.cache[keys[num]].data]).size;
+									delete tApp.cache[keys[num]];
+								}
+							}
+							tApp.cacheSize += size;
+							tApp.cache[fullPath] = {
+								data: xhr.responseText,
+								cachedAt: new Date().getTime()
+							};
+							tApp.cacheSize += new Blob([fullPath]).size;
+							resolve(xhr.responseText);
+						} else {
+							reject("GET " + xhr.responseURL + " " + xhr.status + "(" + xhr.statusText + ")");
+						}
+					}
 				}
+				xhr.open("GET", path, true);
+				xhr.send(null);
+			} else {
+				resolve(tApp.cache[new URL(path, window.location.href).href].data);
 			}
-			xhr.open("GET", path, true);
-			xhr.send(null);
-
-		})
+		});
 	}
 	static redirect(path) {
 		window.location.href = path;
