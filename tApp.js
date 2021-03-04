@@ -4,7 +4,7 @@ class tApp {
 	static cache = {};
 	static cacheSize = 0;
 	static get version() {
-		return "v0.2.0";
+		return "v0.2.1";
 	}
 	static configure(params) {
 		if(params == null) {
@@ -69,7 +69,11 @@ class tApp {
 		};
 	}
 	static route(path, renderFunction) {
-		tApp.routes[path] = renderFunction;
+		if(path == "/" || path.substring(0, 1) == "#") {
+			tApp.routes[path] = renderFunction;
+		} else {
+			throw "tAppError: Invalid path, the path can only be \"/\" or start with \"#\".";
+		}
 	}
 	static get(path) {
 		return new Promise((resolve, reject) => {
