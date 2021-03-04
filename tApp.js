@@ -41,7 +41,7 @@ class tApp {
 		if(path == null) {
 			throw "tAppError: No path specified for rendering."
 		}
-		updatePage(path);
+		tApp.updatePage(path);
 	}
 	static updatePage(hash) {
 		if(hash == null || hash == "") {

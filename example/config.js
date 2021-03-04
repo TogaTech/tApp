@@ -9,7 +9,7 @@ tApp.config = {
 };
 
 tApp.route("/", function(request) {
-	tApp.render("#/");
+	tApp.redirect("#/");
 });
 
 tApp.route("#/index", function(request) {
