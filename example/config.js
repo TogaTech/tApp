@@ -8,8 +8,12 @@ tApp.config = {
 	}
 };
 
+tApp.route("/index", function(request) {
+	tApp.renderPath("#/");
+});
+
 tApp.route("/", function(request) {
-	tApp.redirect("#/");
+	tApp.render("#/");
 });
 
 tApp.route("#/", function(request) {
