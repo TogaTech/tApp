@@ -6,7 +6,7 @@ class tApp {
 	static started = false;
 	static database;
 	static get version() {
-		return "v0.3.0";
+		return "v0.4.0";
 	}
 	static configure(params) {
 		if(params == null) {
