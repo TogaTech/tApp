@@ -8,12 +8,12 @@ tApp.config = {
 	}
 };
 
-tApp.route("/index", function(request) {
-	tApp.renderPath("#/");
-});
-
 tApp.route("/", function(request) {
 	tApp.render("#/");
+});
+
+tApp.route("#/index", function(request) {
+	tApp.renderPath("#/");
 });
 
 tApp.route("#/", function(request) {
