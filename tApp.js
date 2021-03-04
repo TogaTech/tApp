@@ -4,7 +4,7 @@ class tApp {
 	static cache = {};
 	static cacheSize = 0;
 	static get version() {
-		return "v0.2.1";
+		return "v0.3.0";
 	}
 	static configure(params) {
 		if(params == null) {
@@ -48,10 +48,10 @@ class tApp {
 				error: "tAppError: Invalid configure parameter, caching is not of type Object."
 			}
 		}
-		if(params.caching.backgroundRoutes != null && !(params.caching.backgroundRoutes instanceof Array)) {
+		if(params.caching.backgroundPages != null && !(params.caching.backgroundPages instanceof Array)) {
 			return {
 				valid: false,
-				error: "tAppError: Invalid configure parameter, caching.backgroundRoutes is not of type Array."
+				error: "tAppError: Invalid configure parameter, caching.backgroundPages is not of type Array."
 			}
 		}
 		if(params.caching != null && params.caching.maxBytes == null) {
@@ -60,8 +60,8 @@ class tApp {
 		if(params.caching != null && params.caching.updateCache == null) {
 			params.caching.updateCache = Infinity;
 		}
-		if(params.caching != null && params.caching.backgroundRoutes == null) {
-			params.caching.backgroundRoutes = [];
+		if(params.caching != null && params.caching.backgroundPages == null) {
+			params.caching.backgroundPages = [];
 		}
 		return {
 			valid: true,
@@ -153,10 +153,25 @@ class tApp {
 			tApp.render("");
 		}
 	}
+	static loadBackgroundPages() {
+		for(let i = 0; i < tApp.config.caching.backgroundPages.length; i++) {
+			tApp.get(tApp.config.caching.backgroundPages[i]);
+		}
+		if(tApp.config.caching.updateCache < 60000) {
+			setTimeout(() => {
+				tApp.loadBackgroundPages();
+			}, tApp.config.caching.updateCache);
+		} else {
+			setTimeout(() => {
+				tApp.loadBackgroundPages();
+			}, 60000);
+		}
+	}
 	static start() {
 		window.addEventListener("hashchange", () => {
 			tApp.updatePage(window.location.hash);
 		}, false);
 		tApp.updatePage(window.location.hash);
+		tApp.loadBackgroundPages()
 	}
 }
