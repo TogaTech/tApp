@@ -6,7 +6,7 @@ class tApp {
 	static started = false;
 	static database;
 	static get version() {
-		return "v0.4.0";
+		return "v0.4.1";
 	}
 	static configure(params) {
 		if(params == null) {
@@ -198,6 +198,25 @@ class tApp {
 		});
 
 	}
+	static updateCacheSize() {
+		return new Promise(async (resolve, reject) => {
+			let cachedData = await tApp.getCachedPages();
+			let keys = Object.keys(cachedData);
+			let size = 0;
+			for(let i = 0; i < keys.length; i++) {
+				size += new Blob([cachedData[keys[i]].data]).size;
+			}
+			while(size > tApp.config.caching.maxBytes) {
+				let num = Math.floor(Math.random() * keys.length);
+				if(num < keys.length) {
+					let removedPage = await tApp.removeCachedPage(keys[num]);
+					size -= new Blob([removedPage.data]).size;
+				}
+			}
+			tApp.cacheSize = size;
+			resolve();
+		});
+	}
 	static get(path) {
 		return new Promise(async (resolve, reject) => {
 			let fullPath = new URL(path, window.location.href).href;
@@ -207,22 +226,11 @@ class tApp {
 				xhr.onreadystatechange = async () => {
 					if (xhr.readyState === 4) {
 						if (xhr.status === 200) {
-							if(cachedPage != null) {
-								tApp.cacheSize -= new Blob([cachedPage.data]).size;
-							}
-							let size = new Blob([xhr.responseText]).size;
-							while(tApp.cacheSize + size > tApp.config.caching.maxBytes) {
-								let keys = await tApp.getCachedPaths();
-								let num = Math.floor(Math.random() * keys.length);
-								if(num < keys.length) {
-									let removedPage = await tApp.removeCachedPage(keys[num]);
-									tApp.cacheSize -= new Blob([removedPage.data]).size;											}
-							}
-							tApp.cacheSize += size;
 							tApp.setCachedPage(fullPath, {
 								data: xhr.responseText,
 								cachedAt: new Date().getTime()
 							});
+							tApp.updateCacheSize();
 							resolve(xhr.responseText);
 						} else {
 							reject({
@@ -306,7 +314,7 @@ class tApp {
 					Object.defineProperty(window, 'IDBKeyRange', {
 						value: window.IDBKeyRange = window.IDBKeyRange || window.webkitIDBKeyRange || window.msIDBKeyRange
 					});
-					let request = window.indexedDB.open("tAppCache", 2);
+					let request = window.indexedDB.open("tAppCache", 4);
 					request.onerror = (event) => {
 						console.warn("tAppWarning: Persistent caching is not available in this browser.");
 						tApp.config.caching.persistent = false;
@@ -316,18 +324,21 @@ class tApp {
 						tApp.updatePage(window.location.hash);
 						tApp.loadBackgroundPages();
 					};
-					request.onsuccess = (event) => {
+					request.onsuccess = async (event) => {
 						tApp.database = request.result;
+						await tApp.updateCacheSize();
 						window.addEventListener("hashchange", () => {
 							tApp.updatePage(window.location.hash);
 						}, false);
 						tApp.updatePage(window.location.hash);
 						tApp.loadBackgroundPages();
-	
+						
 					};
 					request.onupgradeneeded = (event) => {
 						tApp.database = request.result;
-						tApp.database.createObjectStore("cachedPages");
+						if(!tApp.database.objectStoreNames.contains("cachedPages")) {
+							tApp.database.createObjectStore("cachedPages");
+						}
 					};
 				} else {
 					window.addEventListener("hashchange", () => {
