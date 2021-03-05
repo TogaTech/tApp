@@ -6,7 +6,7 @@ class tApp {
 	static started = false;
 	static database;
 	static get version() {
-		return "v0.4.2";
+		return "v0.5.0";
 	}
 	static configure(params) {
 		if(params == null) {
@@ -219,6 +219,73 @@ class tApp {
 			resolve();
 		});
 	}
+	static getOfflineData(key) {
+		return new Promise((resolve, reject) => {
+			let request = tApp.database.transaction(["offlineStorage"], "readwrite").objectStore("offlineStorage").get(key);
+			request.onerror = (event) => {
+				reject("tAppError: Offline storage is not available in this browser.");
+			};
+			request.onsuccess = (event) => {
+				resolve(request.result);
+			};
+		});
+	}
+	static setOfflineData(key, value) {
+		return new Promise((resolve, reject) => {
+			let request = tApp.database.transaction(["offlineStorage"], "readwrite").objectStore("offlineStorage").put(value, key);
+			request.onerror = (event) => {
+				reject("tAppError: Offline storage is not available in this browser.");
+			};
+			request.onsuccess = (event) => {
+				resolve(true);
+			}
+		});
+	}
+	static removeOfflineData(key) {
+		return new Promise(async (resolve, reject) => {
+			let tmp = await tApp.getOfflineData(key);
+			let request = tApp.database.transaction(["offlineStorage"], "readwrite").objectStore("offlineStorage").delete(key);
+			request.onerror = (event) => {
+				reject("tAppError: Offline storage is not available in this browser.");
+			};
+			request.onsuccess = (event) => {
+				resolve(tmp);
+			};
+		});
+	}
+	static getAllOfflineDataKeys() {
+		return new Promise((resolve, reject) => {
+			let request = tApp.database.transaction(["offlineStorage"], "readwrite").objectStore("offlineStorage").getAllKeys();
+			request.onerror = (event) => {
+				reject("tAppError: Offline storage is not available in this browser.");
+			};
+			request.onsuccess = (event) => {
+				resolve(request.result);
+			};
+		});
+	}
+	static getAllOfflineData() {
+		return new Promise(async (resolve, reject) => {
+			let keys = await tApp.getAllOfflineDataKeys();
+			let offline = {};
+			for(let i = 0; i < keys.length; i++) {
+				offline[keys[i]] = await tApp.getOfflineData(keys[i]);
+			}
+			resolve(offline);
+		});
+	}
+	static clearOfflineData() {
+		return new Promise((resolve, reject) => {
+			let request = tApp.database.transaction(["offlineStorage"], "readwrite").objectStore("offlineStorage").clear();
+			request.onerror = (event) => {
+				reject("tAppError: Offline storage is not available in this browser.");
+			};
+			request.onsuccess = (event) => {
+				resolve(true);
+			};
+		});
+
+	}
 	static get(path) {
 		return new Promise(async (resolve, reject) => {
 			let fullPath = new URL(path, window.location.href).href;
@@ -316,7 +383,7 @@ class tApp {
 					Object.defineProperty(window, 'IDBKeyRange', {
 						value: window.IDBKeyRange = window.IDBKeyRange || window.webkitIDBKeyRange || window.msIDBKeyRange
 					});
-					let request = window.indexedDB.open("tAppCache", 4);
+					let request = window.indexedDB.open("tAppCache", 5);
 					request.onerror = (event) => {
 						console.warn("tAppWarning: Persistent caching is not available in this browser.");
 						tApp.config.caching.persistent = false;
@@ -340,6 +407,9 @@ class tApp {
 						tApp.database = request.result;
 						if(!tApp.database.objectStoreNames.contains("cachedPages")) {
 							tApp.database.createObjectStore("cachedPages");
+						}
+						if(!tApp.database.objectStoreNames.contains("offlineStorage")) {
+							tApp.database.createObjectStore("offlineStorage");
 						}
 					};
 				} else {
