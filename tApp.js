@@ -5,8 +5,9 @@ class tApp {
 	static cacheSize = 0;
 	static started = false;
 	static database;
+	static currentHash = "/";
 	static get version() {
-		return "v0.5.0";
+		return "v0.5.1";
 	}
 	static configure(params) {
 		if(params == null) {
@@ -346,7 +347,11 @@ class tApp {
 		if(tApp.config.ignoreRoutes != null && tApp.config.ignoreRoutes instanceof Array && tApp.config.ignoreRoutes.includes(hash)) {
 			
 		} else if(tApp.routes[hash] != null) {
-			tApp.routes[hash]();
+			tApp.routes[hash]({
+				type: "GET",
+				referrer: tApp.currentHash,
+				data: null
+			});
 		} else if(tApp.config.forbiddenRoutes != null && tApp.config.forbiddenRoutes instanceof Array && tApp.config.forbiddenRoutes.includes(hash) && tApp.config.errorPages != null && tApp.config.errorPages.forbidden != null) {
 			tApp.updatePage(tApp.config.errorPages.forbidden);
 		} else if(tApp.config.errorPages != null && tApp.config.errorPages.notFound != null) {
@@ -354,6 +359,7 @@ class tApp {
 		} else {
 			tApp.render("");
 		}
+		tApp.currentHash = hash;
 	}
 	static loadBackgroundPages() {
 		for(let i = 0; i < tApp.config.caching.backgroundPages.length; i++) {
