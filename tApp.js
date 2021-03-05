@@ -6,7 +6,7 @@ class tApp {
 	static started = false;
 	static database;
 	static get version() {
-		return "v0.4.1";
+		return "v0.4.2";
 	}
 	static configure(params) {
 		if(params == null) {
@@ -204,12 +204,14 @@ class tApp {
 			let keys = Object.keys(cachedData);
 			let size = 0;
 			for(let i = 0; i < keys.length; i++) {
+				size += new Blob([keys[i]]).size;
 				size += new Blob([cachedData[keys[i]].data]).size;
 			}
 			while(size > tApp.config.caching.maxBytes) {
 				let num = Math.floor(Math.random() * keys.length);
 				if(num < keys.length) {
 					let removedPage = await tApp.removeCachedPage(keys[num]);
+					size -= new Blob([keys[num]]).size;
 					size -= new Blob([removedPage.data]).size;
 				}
 			}
