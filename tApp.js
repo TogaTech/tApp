@@ -7,7 +7,7 @@ class tApp {
 	static database;
 	static currentHash = "/";
 	static get version() {
-		return "v0.5.1";
+		return "v0.6.0";
 	}
 	static configure(params) {
 		if(params == null) {
@@ -60,12 +60,6 @@ class tApp {
 				valid: false,
 				error: "tAppError: Invalid configure parameter, caching.backgroundPages is not of type Array."
 			}
-		}
-		if(params.caching != null && params.caching.maxBytes == null) {
-			params.caching.maxBytes = Infinity;
-		}
-		if(params.caching != null && params.caching.updateCache == null) {
-			params.caching.updateCache = Infinity;
 		}
 		if(params.caching != null && params.caching.backgroundPages == null) {
 			params.caching.backgroundPages = [];
@@ -199,27 +193,6 @@ class tApp {
 		});
 
 	}
-	static updateCacheSize() {
-		return new Promise(async (resolve, reject) => {
-			let cachedData = await tApp.getCachedPages();
-			let keys = Object.keys(cachedData);
-			let size = 0;
-			for(let i = 0; i < keys.length; i++) {
-				size += new Blob([keys[i]]).size;
-				size += new Blob([cachedData[keys[i]].data]).size;
-			}
-			while(size > tApp.config.caching.maxBytes) {
-				let num = Math.floor(Math.random() * keys.length);
-				if(num < keys.length) {
-					let removedPage = await tApp.removeCachedPage(keys[num]);
-					size -= new Blob([keys[num]]).size;
-					size -= new Blob([removedPage.data]).size;
-				}
-			}
-			tApp.cacheSize = size;
-			resolve();
-		});
-	}
 	static getOfflineData(key) {
 		return new Promise((resolve, reject) => {
 			let request = tApp.database.transaction(["offlineStorage"], "readwrite").objectStore("offlineStorage").get(key);
@@ -291,18 +264,19 @@ class tApp {
 		return new Promise(async (resolve, reject) => {
 			let fullPath = new URL(path, window.location.href).href;
 			let cachedPage = await tApp.getCachedPage(fullPath);
-			if(cachedPage == null || cachedPage.cachedAt + tApp.config.caching.updateCache < new Date().getTime()) {
-				let xhr = new XMLHttpRequest();
-				xhr.onreadystatechange = async () => {
-					if (xhr.readyState === 4) {
-						if (xhr.status === 200) {
-							tApp.setCachedPage(fullPath, {
-								data: xhr.responseText,
-								cachedAt: new Date().getTime()
-							});
-							tApp.updateCacheSize();
+			let xhr = new XMLHttpRequest();
+			xhr.onreadystatechange = async () => {
+				if (xhr.readyState === 4) {
+					if (xhr.status === 200) {
+						tApp.setCachedPage(fullPath, {
+							data: xhr.responseText,
+							cachedAt: new Date().getTime()
+						});
+						if(cachedPage == null) {
 							resolve(xhr.responseText);
-						} else {
+						}
+					} else {
+						if(cachedPage == null) {
 							reject({
 								error: "GET " + xhr.responseURL + " " + xhr.status + " (" + xhr.statusText + ")",
 								errorCode: xhr.status
@@ -310,9 +284,10 @@ class tApp {
 						}
 					}
 				}
-				xhr.open("GET", path, true);
-				xhr.send(null);
-			} else {
+			}
+			xhr.open("GET", path, true);
+			xhr.send(null);
+			if(cachedPage != null) {
 				resolve(cachedPage.data);
 			}
 		});
@@ -365,15 +340,6 @@ class tApp {
 		for(let i = 0; i < tApp.config.caching.backgroundPages.length; i++) {
 			tApp.get(tApp.config.caching.backgroundPages[i]);
 		}
-		if(tApp.config.caching.updateCache < 60000) {
-			setTimeout(() => {
-				tApp.loadBackgroundPages();
-			}, tApp.config.caching.updateCache);
-		} else {
-			setTimeout(() => {
-				tApp.loadBackgroundPages();
-			}, 60000);
-		}
 	}
 	static start() {
 		return new Promise((resolve, reject) => {
@@ -398,15 +364,16 @@ class tApp {
 						}, false);
 						tApp.updatePage(window.location.hash);
 						tApp.loadBackgroundPages();
+						resolve(true);
 					};
 					request.onsuccess = async (event) => {
 						tApp.database = request.result;
-						await tApp.updateCacheSize();
 						window.addEventListener("hashchange", () => {
 							tApp.updatePage(window.location.hash);
 						}, false);
 						tApp.updatePage(window.location.hash);
 						tApp.loadBackgroundPages();
+						resolve(true);
 						
 					};
 					request.onupgradeneeded = (event) => {
@@ -424,11 +391,44 @@ class tApp {
 					}, false);
 					tApp.updatePage(window.location.hash);
 					tApp.loadBackgroundPages();
+					resolve(true);
 				}
-				resolve(true);
 			} else {
 				reject("tAppError: tApp has already started.");
 			}
+		});
+	}
+	static install(pathToServiceWorker = '/tApp-service-worker.js') {
+		return new Promise((resolve, reject) => {
+			if ('serviceWorker' in navigator) {
+				navigator.serviceWorker.register(pathToServiceWorker).then(function() {
+					resolve(true);
+				}, function() {
+					reject("tAppError: Unable to install full offline functionality, an error occurred.");
+				});
+			} else {
+				reject("tAppError: Full offline functionality is not supported for this website. This issue can occur in unsupported browsers (such as IE) or in insecure contexts (HTTPS/SSL is required for full offline functionality).");
+			}
+		});
+	}
+	static uninstall() {
+		return new Promise((resolve, reject) => {
+			navigator.serviceWorker.getRegistrations().then(function(registrations) {
+				for(let registration of registrations) {
+					registration.unregister()
+				}
+				resolve(true);
+			});
+		});
+	}
+	static update() {
+		return new Promise((resolve, reject) => {
+			navigator.serviceWorker.getRegistrations().then(function(registrations) {
+				for(let registration of registrations) {
+					registration.update()
+				}
+				resolve(true);
+			});
 		});
 	}
 }

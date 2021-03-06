@@ -7,9 +7,7 @@ tApp.configure({
 		forbidden: "#/403"
 	},
 	caching: {
-		maxBytes: 5 * 1000 * 1000, // around 5MB in bytes (5 MB * 1000 KB/MB * 1000 bytes/KB)
-		updateCache: 5 * 60 * 1000, // updates the cache every 5 minutes in milliseconds (5 minutes * 60 seconds/minute * 1000 seconds/millisecond)
-		backgroundPages: ["./views/index.html", "./views/about.html"],
+		backgroundPages: ["./", "./config.js", "/tApp.js", "./views/index.html", "./views/about.html"],
 		persistent: true
 	}
 });
@@ -51,4 +49,8 @@ tApp.route("#/403", function(request) {
 	`);
 });
 
-tApp.start();
+tApp.start().then(() => {
+	tApp.install().then(() => {
+		tApp.update();
+	})
+});
