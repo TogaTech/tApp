@@ -7,7 +7,7 @@ class tApp {
 	static database;
 	static currentHash = "/";
 	static get version() {
-		return "v0.7.1";
+		return "v0.7.2";
 	}
 	static configure(params) {
 		if(params == null) {
@@ -349,6 +349,7 @@ class tApp {
 			return template;
 		}
 		html = convertTemplate(html, options, "");
+		html = html.replaceAll("{\\{", "{{");
 		tApp.render(html);
 	}
 	static renderTemplate(path, options) {
