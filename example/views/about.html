@@ -1,10 +1,10 @@
 <h1>About</h1>
-<p>tApps are different than regular websites. People expect apps to work differently. They don't want page loads, they just want a smooth experience. tApp helps achieve this goal.<br><br>Here are a few interesting things about this app:</p>
+<p>tApps are different than regular websites. Users expect apps to work differently. They don't want page loads when navigating an app, they want a smooth and instantaneous experience. Additionally, users want apps to be accessible offline. tApp helps achieve this goal.<br><br>Here are a few interesting things about tApps:</p>
 <ul>
-	<li>The navbar is not changed between pages. That means that while the rest of the page is loading, the navbar stays persistent and doesn't disappear, just like any normal app navbar. This persistence is not just limited to the navbar, anything outside the main changing view (like a persistent header or footer) can also stay across pages.</li>
-	<li>You can serve custom 403 forbidden and 404 not found error messages and pages right from your client, since all routing is done in the client.</li>
-	<li>Caching allows your tApp to be blazingly fast. You can set custom cache size and time limits in your code, and tApp will save loaded pages in the cache so that they load instantly the next time the user navigates to that section of the tApp.</li>
-	<li>This tApp utilizes persistent caching, so after the very first page load, all requests are redirected to the cache until the cache time expires.</li>
+	<li>tApps can work offline, just like normal apps. Since all server-like routing and computation can be handled in the client through tApp, users can load and browse the tApp offline at a later time after only loading the tApp once.</li>
+	<li>Content (like header, navbar, and footer) can remain the same between pages. That means that while the rest of the page is loading, this content stays persistent and doesn't disappear, just like any normal app navbar.</li>
+	<li>You can serve custom 403 forbidden and 404 not found error messages and pages right from your client, since all routing is done in the client. However, the 403 page should not be used as a replacement to server-side blocking on password-protected pages, it should merely be utilized as an enhancement to the tApp experience.</li>
+	<li>Caching allows your tApp to be blazingly fast. tApp will save loaded pages in the cache so that they load instantly the next time the user navigates to that section of the tApp.</li>
+	<li>tApps can utilize persistent caching, so after the very first page load, all requests are redirected to the cache until the cache time expires.</li>
 	<li>Routes can be specified to automatically load and cache asynchronously in the background when the user first loads your tApp, making the next page loads instantaneous.</li>
-	<li>tApps can work offline, just like normal apps. Since all server-like routing and computation can be handled in the client through tApp, users can load browse the tApp offline at a later time after only loading the tApp once.</li>
 </ul>
