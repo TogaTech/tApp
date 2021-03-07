@@ -1,4 +1,4 @@
-var version = 'v17::';
+var version = 'v18::';
 
 self.addEventListener("install", function(event) {
 	event.waitUntil(() => {
@@ -55,37 +55,43 @@ self.addEventListener("fetch", function(event) {
 				}
 				function getCachedPage(fullPath) {
 					return new Promise((resolve, reject) => {
-						let request = db.transaction(["cachedPages"], "readwrite").objectStore("cachedPages").get(fullPath);
-						request.onerror = (err) => {
-							myFetch(url).then((response) => {
-								resolve(response);
-							});
-						};
-						request.onsuccess = () => {
-							myFetch(url).then((response) => {
-								if(response.status === 200) {
-									response.text().then((text) => {
-										setCachedPage(url, {
-											data: text,
-											cachedAt: new Date().getTime()
-										});
-									});
-								}
-							});
-							if(request.result != null) {
-								resolve(new Response(request.result.data, {
-									status: 200,
-									statusText: 'OK',
-									headers: new Headers({
-										'Content-Type': 'text/html'
-									})
-								}));
-							} else {
+						if(event.request.headers.get("tApp-Ignore-Cache") != "Ignore-Cache") {
+							let request = db.transaction(["cachedPages"], "readwrite").objectStore("cachedPages").get(fullPath);
+							request.onerror = (err) => {
 								myFetch(url).then((response) => {
 									resolve(response);
 								});
-							}
-						};
+							};
+							request.onsuccess = () => {
+								myFetch(url).then((response) => {
+									if(response.status === 200) {
+										response.text().then((text) => {
+											setCachedPage(url, {
+												data: text,
+												cachedAt: new Date().getTime()
+											});
+										});
+									}
+								});
+								if(request.result != null) {
+									resolve(new Response(request.result.data, {
+										status: 200,
+										statusText: 'OK',
+										headers: new Headers({
+											'Content-Type': 'text/html'
+										})
+									}));
+								} else {
+									myFetch(url).then((response) => {
+										resolve(response);
+									});
+								}
+							};
+						} else {
+							myFetch(url).then((response) => {
+								resolve(response);
+							});
+						}
 					});
 				}
 				getCachedPage(url).then((response) => {

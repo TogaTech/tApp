@@ -7,7 +7,7 @@ class tApp {
 	static database;
 	static currentHash = "/";
 	static get version() {
-		return "v0.7.0";
+		return "v0.7.1";
 	}
 	static configure(params) {
 		if(params == null) {
@@ -262,7 +262,7 @@ class tApp {
 	}
 	static get(path) {
 		return new Promise(async (resolve, reject) => {
-			let fullPath = new URL(path, window.location.href).href;
+			let fullPath = new URL(path, window.location.href).href.split("#")[0];
 			let cachedPage = await tApp.getCachedPage(fullPath);
 			let xhr = new XMLHttpRequest();
 			xhr.onreadystatechange = async () => {
@@ -286,6 +286,7 @@ class tApp {
 				}
 			}
 			xhr.open("GET", path, true);
+			xhr.setRequestHeader("tApp-Ignore-Cache", "Ignore-Cache");
 			xhr.send(null);
 			if(cachedPage != null) {
 				resolve(cachedPage.data);
