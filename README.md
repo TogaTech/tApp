@@ -16,4 +16,22 @@ tApps are different than regular websites. Users expect apps to work differently
 See `/example` for an example tApp. The tApp loads and installs when `/example/index.html` is loaded, provided that `tApp.js` and `tApp-service-worker.js` are installed in the root directory. By downloading the repository and navigating to `file:///.../example/index.html`, the tApp should function as intended.
 
 ## Documentation
+tApps are made up of 4 main components: library files (`tApp.js` and `tApp-service-worker.js`), the loader file, the configuration file, and views.
+
+### Library Files
+You do not need to worry about library files, as we take care of the development and maintenance of these files. All you need to do is to make sure that `tApp.js` is uploaded somewhere accessbile in your app and that `tApp-service-worker.js` is uploaded to the base/root directory of your app (if not, the app can only load pages within a scoped directory when offline). For example, if the service worker is uploaded to `/`, all of your tApp will be accessible offline, and if the worker is only uploaded to `/subdirectory/`, only pages in `/subdirectory/` can be loaded offline.
+
+### Loader File
 Documentation is coming soon.
+
+### Configuration File
+Documentation is coming soon.
+
+### Views
+Documentation is coming soon.
+
+### General Method Documentation
+Documentation is coming soon.
+
+## Interoperability
+The tApp framework is interoperable with other front-end web frameworks. In your configuration file routes, instead of using a tApp render function, you can call a function from another framework and have that framework either render to the DOM using a function within that framework or return a value that can be rendered through a tApp render function.
