@@ -35,6 +35,21 @@ tApp.route("#/text", function(request) {
 	`);
 });
 
+tApp.route("#/template", function(request) {
+	tApp.renderTemplate("./views/template.html", {
+		header: "Template Header",
+		text: "Sample template text...",
+		list: {
+			header: "Example template list (nested options)",
+			elements: [
+				"First element",
+				"Second element",
+				"Third element"
+			]
+		}
+	});
+});
+
 tApp.route("#/404", function(request) {
 	tApp.render(`
 		<h1>Error 404</h1>

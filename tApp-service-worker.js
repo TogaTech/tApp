@@ -1,4 +1,4 @@
-var version = 'v16::';
+var version = 'v17::';
 
 self.addEventListener("install", function(event) {
 	event.waitUntil(() => {
@@ -65,13 +65,10 @@ self.addEventListener("fetch", function(event) {
 							myFetch(url).then((response) => {
 								if(response.status === 200) {
 									response.text().then((text) => {
-										
 										setCachedPage(url, {
 											data: text,
 											cachedAt: new Date().getTime()
 										});
-									}).catch(() => {
-										
 									});
 								}
 							});

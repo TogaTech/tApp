@@ -7,7 +7,7 @@ class tApp {
 	static database;
 	static currentHash = "/";
 	static get version() {
-		return "v0.6.1";
+		return "v0.7.0";
 	}
 	static configure(params) {
 		if(params == null) {
@@ -333,6 +333,26 @@ class tApp {
 	static renderFile(path) {
 		tApp.get(path).then((res) => {
 			tApp.render(res);
+		});
+	}
+	static renderTemplateHTML(html, options) {
+		function convertTemplate(template, parameters, prefix) {
+			let keys = Object.keys(parameters);
+			for(let i = 0; i < keys.length; i++) {
+				if(parameters[keys[i]] instanceof Object) {
+					template = convertTemplate(template, parameters[keys[i]], prefix + keys[i] + ".");
+				} else {
+					template = template.replaceAll(new RegExp("{{\\s*" + prefix + keys[i] + "\\s*}}", "g"), parameters[keys[i]]);
+				}
+			}
+			return template;
+		}
+		html = convertTemplate(html, options, "");
+		tApp.render(html);
+	}
+	static renderTemplate(path, options) {
+		tApp.get(path).then((res) => {
+			tApp.renderTemplateHTML(res, options);
 		});
 	}
 	static renderPath(path) {
