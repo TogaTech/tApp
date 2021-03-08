@@ -7,7 +7,7 @@ class tApp {
 	static database;
 	static currentHash = "/";
 	static get version() {
-		return "v0.7.4";
+		return "v0.8.0";
 	}
 	static configure(params) {
 		if(params == null) {
@@ -264,32 +264,48 @@ class tApp {
 		return new Promise(async (resolve, reject) => {
 			let fullPath = new URL(path, window.location.href).href.split("#")[0];
 			let cachedPage = await tApp.getCachedPage(fullPath);
-			let xhr = new XMLHttpRequest();
-			xhr.onreadystatechange = async () => {
-				if (xhr.readyState === 4) {
-					if (xhr.status === 200) {
-						tApp.setCachedPage(fullPath, {
-							data: xhr.responseText,
-							cachedAt: new Date().getTime()
-						});
-						if(cachedPage == null) {
-							resolve(xhr.responseText);
-						}
-					} else {
-						if(cachedPage == null) {
-							reject({
-								error: "GET " + xhr.responseURL + " " + xhr.status + " (" + xhr.statusText + ")",
-								errorCode: xhr.status
-							});
-						}
+			function requestToJSON(request) {
+				let jsonRequest = {};
+				for(let property in request) {
+					if(property != "bodyUsed" && typeof request[property] != "object" && typeof request[property] != "function") {
+						jsonRequest[property] = request[property];
 					}
 				}
+				if(request.headers != null) {
+					jsonRequest.headers = {};
+					request.headers.forEach((value, key) => {
+						jsonRequest.headers[key] = value;
+					});
+				}
+				return jsonRequest;
 			}
-			xhr.open("GET", path, true);
-			xhr.setRequestHeader("tApp-Ignore-Cache", "Ignore-Cache");
-			xhr.send(null);
+			fetch(path, {
+				headers: {
+					"tApp-Ignore-Cache": "Ignore-Cache"
+				}
+			}).then((response) => {
+				response.clone().text().then((data) => {
+					
+					if(response.status === 200) {
+						tApp.setCachedPage(fullPath, {
+							data: data,
+							cachedAt: new Date().getTime(),
+							request: requestToJSON(response)
+						});
+						if(cachedPage == null) {
+							resolve(response);
+						}
+					} else {
+						reject(response);
+					}
+				})
+			}).catch((err) => {
+				if(cachedPage == null) {
+					reject(response);
+				}
+			});
 			if(cachedPage != null) {
-				resolve(cachedPage.data);
+				resolve(new Response(new Blob([cachedPage.data]), cachedPage.request));
 			}
 		});
 	}
@@ -333,7 +349,9 @@ class tApp {
 	}
 	static renderFile(path) {
 		tApp.get(path).then((res) => {
-			tApp.render(res);
+			res.clone().text().then((text) => {
+				tApp.render(text);
+			});
 		});
 	}
 	static renderTemplateHTML(html, options) {
@@ -354,7 +372,9 @@ class tApp {
 	}
 	static renderTemplate(path, options) {
 		tApp.get(path).then((res) => {
-			tApp.renderTemplateHTML(res, options);
+			res.clone().text().then((text) => {
+				tApp.renderTemplateHTML(text, options);
+			});
 		});
 	}
 	static renderPath(path) {
@@ -412,19 +432,23 @@ class tApp {
 					request.onerror = (event) => {
 						console.warn("tAppWarning: Persistent caching is not available in this browser.");
 						tApp.config.caching.persistent = false;
-						window.addEventListener("hashchange", () => {
+						if(Object.keys(tApp.routes).length > 0) {
+							window.addEventListener("hashchange", () => {
+								tApp.updatePage(window.location.hash);
+							}, false);
 							tApp.updatePage(window.location.hash);
-						}, false);
-						tApp.updatePage(window.location.hash);
+						}
 						tApp.loadBackgroundPages();
 						resolve(true);
 					};
 					request.onsuccess = async (event) => {
 						tApp.database = request.result;
-						window.addEventListener("hashchange", () => {
+						if(Object.keys(tApp.routes).length > 0) {
+							window.addEventListener("hashchange", () => {
+								tApp.updatePage(window.location.hash);
+							}, false);
 							tApp.updatePage(window.location.hash);
-						}, false);
-						tApp.updatePage(window.location.hash);
+						}
 						tApp.loadBackgroundPages();
 						resolve(true);
 						
@@ -439,10 +463,12 @@ class tApp {
 						}
 					};
 				} else {
-					window.addEventListener("hashchange", () => {
+					if(Object.keys(tApp.routes).length > 0) {
+						window.addEventListener("hashchange", () => {
+							tApp.updatePage(window.location.hash);
+						}, false);
 						tApp.updatePage(window.location.hash);
-					}, false);
-					tApp.updatePage(window.location.hash);
+					}
 					tApp.loadBackgroundPages();
 					resolve(true);
 				}

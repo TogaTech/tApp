@@ -1,4 +1,4 @@
-var version = 'v19::';
+var version = 'v26::';
 
 self.addEventListener("install", function(event) {
 	event.waitUntil(() => {
@@ -49,6 +49,22 @@ self.addEventListener("fetch", function(event) {
 			}
 			requestInit.onsuccess = async function() {
 				db = requestInit.result;
+				function requestToJSON(request) {
+					let jsonRequest = {};
+					for(let property in request) {
+						if(property != "bodyUsed" && typeof request[property] != "object" && typeof request[property] != "function") {
+							jsonRequest[property] = request[property];
+						}
+					}
+					if(request.headers != null) {
+						jsonRequest.headers = {};
+						request.headers.forEach((value, key) => {
+							jsonRequest.headers[key] = value;
+						});
+					}
+					return jsonRequest;
+				}
+
 				function setCachedPage(fullPath, value) {
 					return new Promise((resolve, reject) => {
 						let request = db.transaction(["cachedPages"], "readwrite").objectStore("cachedPages").put(value, fullPath);
@@ -72,22 +88,17 @@ self.addEventListener("fetch", function(event) {
 							request.onsuccess = () => {
 								myFetch(url).then((response) => {
 									if(response.status === 200) {
-										response.text().then((text) => {
+										response.clone().text().then((text) => {
 											setCachedPage(url, {
 												data: text,
-												cachedAt: new Date().getTime()
+												cachedAt: new Date().getTime(),
+												request: requestToJSON(response)
 											});
 										});
 									}
 								});
 								if(request.result != null) {
-									resolve(new Response(request.result.data, {
-										status: 200,
-										statusText: 'OK',
-										headers: new Headers({
-											'Content-Type': 'text/html'
-										})
-									}));
+									resolve(new Response(new Blob([request.result.data]), request.result.request));
 								} else {
 									myFetch(url).then((response) => {
 										resolve(response);
