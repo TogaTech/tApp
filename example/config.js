@@ -8,6 +8,7 @@ tApp.configure({
 	},
 	caching: {
 		backgroundPages: ["./", "./config.js", "/tApp.js", "./views/index.html", "./views/about.html"],
+		periodicUpdate: 60 * 1000,
 		persistent: true
 	}
 });

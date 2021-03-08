@@ -7,7 +7,7 @@ class tApp {
 	static database;
 	static currentHash = "/";
 	static get version() {
-		return "v0.7.3";
+		return "v0.7.4";
 	}
 	static configure(params) {
 		if(params == null) {
@@ -387,6 +387,11 @@ class tApp {
 	static loadBackgroundPages() {
 		for(let i = 0; i < tApp.config.caching.backgroundPages.length; i++) {
 			tApp.get(tApp.config.caching.backgroundPages[i]);
+		}
+		if(tApp.config.caching.periodicUpdate != null) {
+			setTimeout(() => {
+				tApp.loadBackgroundPages();
+			}, tApp.config.caching.periodicUpdate)
 		}
 	}
 	static start() {
