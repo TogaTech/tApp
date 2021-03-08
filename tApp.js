@@ -7,7 +7,7 @@ class tApp {
 	static database;
 	static currentHash = "/";
 	static get version() {
-		return "v0.8.0";
+		return "v0.8.1";
 	}
 	static configure(params) {
 		if(params == null) {
@@ -264,7 +264,7 @@ class tApp {
 		return new Promise(async (resolve, reject) => {
 			let fullPath = new URL(path, window.location.href).href.split("#")[0];
 			let cachedPage = await tApp.getCachedPage(fullPath);
-			function requestToJSON(request) {
+			function responseToJSON(request) {
 				let jsonRequest = {};
 				for(let property in request) {
 					if(property != "bodyUsed" && typeof request[property] != "object" && typeof request[property] != "function") {
@@ -284,13 +284,13 @@ class tApp {
 					"tApp-Ignore-Cache": "Ignore-Cache"
 				}
 			}).then((response) => {
-				response.clone().text().then((data) => {
+				response.clone().arrayBuffer().then((data) => {
 					
 					if(response.status === 200) {
 						tApp.setCachedPage(fullPath, {
 							data: data,
 							cachedAt: new Date().getTime(),
-							request: requestToJSON(response)
+							response: responseToJSON(response)
 						});
 						if(cachedPage == null) {
 							resolve(response);
@@ -305,7 +305,7 @@ class tApp {
 				}
 			});
 			if(cachedPage != null) {
-				resolve(new Response(new Blob([cachedPage.data]), cachedPage.request));
+				resolve(new Response(cachedPage.data, cachedPage.response));
 			}
 		});
 	}

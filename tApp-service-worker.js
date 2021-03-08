@@ -1,4 +1,4 @@
-var version = 'v26::';
+var version = 'v28::';
 
 self.addEventListener("install", function(event) {
 	event.waitUntil(() => {
@@ -49,7 +49,7 @@ self.addEventListener("fetch", function(event) {
 			}
 			requestInit.onsuccess = async function() {
 				db = requestInit.result;
-				function requestToJSON(request) {
+				function responseToJSON(request) {
 					let jsonRequest = {};
 					for(let property in request) {
 						if(property != "bodyUsed" && typeof request[property] != "object" && typeof request[property] != "function") {
@@ -88,17 +88,17 @@ self.addEventListener("fetch", function(event) {
 							request.onsuccess = () => {
 								myFetch(url).then((response) => {
 									if(response.status === 200) {
-										response.clone().text().then((text) => {
+										response.clone().arrayBuffer().then((buffer) => {
 											setCachedPage(url, {
-												data: text,
+												data: buffer,
 												cachedAt: new Date().getTime(),
-												request: requestToJSON(response)
+												response: responseToJSON(response)
 											});
 										});
 									}
 								});
 								if(request.result != null) {
-									resolve(new Response(new Blob([request.result.data]), request.result.request));
+									resolve(new Response(request.result.data, request.result.response));
 								} else {
 									myFetch(url).then((response) => {
 										resolve(response);
