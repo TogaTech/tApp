@@ -1,4 +1,4 @@
-var version = 'v18::';
+var version = 'v19::';
 
 self.addEventListener("install", function(event) {
 	event.waitUntil(() => {
@@ -7,12 +7,19 @@ self.addEventListener("install", function(event) {
 });
 
 self.addEventListener("fetch", function(event) {
-	let fetchResponse = (async () => {
+	if (event.request.method !== 'GET') {
+		// Handle other requests such as POST here
+		return;
+	}
+	let fetchResponse;
+	
+	/*
+	Add other edge cases based on event.request (for example, event.request.url == "/") here,
+	assign the return value to fetchResponse or use `return;` to skip the override
+	*/
+	
+	fetchResponse = (async () => {
 		return new Promise((resolve, reject) => {
-			if (event.request.method !== 'GET') {
-				// Handle other requests such as POST here
-				return;
-			}
 			let url = event.request.url.split("#")[0];
 			let requestInit = indexedDB.open("tAppCache", 5);
 			let db;

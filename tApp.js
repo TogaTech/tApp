@@ -7,7 +7,7 @@ class tApp {
 	static database;
 	static currentHash = "/";
 	static get version() {
-		return "v0.7.2";
+		return "v0.7.3";
 	}
 	static configure(params) {
 		if(params == null) {
