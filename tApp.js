@@ -7,7 +7,7 @@ class tApp {
 	static database;
 	static currentHash = "/";
 	static get version() {
-		return "v0.8.2";
+		return "v0.8.3";
 	}
 	static configure(params) {
 		if(params == null) {
@@ -260,7 +260,7 @@ class tApp {
 		});
 
 	}
-	static get(path) {
+	static get(path, ignoreCache = false) {
 		return new Promise(async (resolve, reject) => {
 			let fullPath = new URL(path, window.location.href).href.split("#")[0];
 			let cachedPage = await tApp.getCachedPage(fullPath);
@@ -284,27 +284,31 @@ class tApp {
 					"tApp-Ignore-Cache": "Ignore-Cache"
 				}
 			}).then((response) => {
-				response.clone().arrayBuffer().then((data) => {
-					
-					if(response.status === 200) {
-						tApp.setCachedPage(fullPath, {
-							data: data,
-							cachedAt: new Date().getTime(),
-							response: responseToJSON(response)
-						});
-						if(cachedPage == null) {
-							resolve(response);
+				if(ignoreCache) {
+					resolve(response);
+				} else {
+					response.clone().arrayBuffer().then((data) => {
+						
+						if(response.status === 200) {
+							tApp.setCachedPage(fullPath, {
+								data: data,
+								cachedAt: new Date().getTime(),
+								response: responseToJSON(response)
+							});
+							if(cachedPage == null) {
+								resolve(response);
+							}
+						} else {
+							reject(response);
 						}
-					} else {
-						reject(response);
-					}
-				})
+					});
+				}
 			}).catch((err) => {
 				if(cachedPage == null) {
 					reject(response);
 				}
 			});
-			if(cachedPage != null) {
+			if(!ignoreCache && cachedPage != null) {
 				resolve(new Response(cachedPage.data, cachedPage.response));
 			}
 		});
