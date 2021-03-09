@@ -22,24 +22,39 @@ tApps are made up of 4 main components: library files (`tApp.js` and `tApp-servi
 You do not need to worry about library files, as we take care of the development and maintenance of these files. All you need to do is to make sure that `tApp.js` is uploaded somewhere accessbile in your app and that `tApp-service-worker.js` is uploaded to the base/root directory of your app (if not, the app can only load pages within a scoped directory when offline). For example, if the service worker is uploaded to `/`, all of your tApp will be accessible offline, and if the worker is only uploaded to `/subdirectory/`, only pages in `/subdirectory/` can be loaded offline.
 
 ### Loader File
-The loader file is the static part of the page as well as the entry point to the tApp. The convention for the loader file name is `index.html`, since `https://www.example.com/index.html` can usually be replaced by just `https://www.example.com/` when loading a website. This file can include a static navigation bar or header which doesn't change across pages. Additionally, this file is where style, favicons, global scripts, or any other code is loaded in the head. The loader file should be a full HTML file with a section specifically for rendering.
+The loader file is the static part of the page as well as the entry point to the tApp. The convention for the loader file name is `index.html`, since `https://www.example.com/index.html` can usually be replaced by just `https://www.example.com/` when loading a website.
 
+#### Static Code
+This file can include a static navigation bar or header which doesn't change across pages. Additionally, this file is where style, favicons, global scripts, or any other code is loaded in the head. The loader file should be a full HTML file with a section specifically for rendering.
+
+#### Rendering Section
 The convention for the rendering section is `<tapp-main></tapp-main>`, but any tag can work as long as you can select it using the DOM methods `document.querySelector(selector)` or `document.getElementById(id)` later in your configuration file. You may want to have some static loading or preset text within the rendering section if your application takes a while to load.
 
+#### tApp Import
 The loader file will also require tApp to be imported: `<script src="/tApp.js"></script>`
 The convention for importing tApp is to place this code in the head, but at the very least, tApp must be imported before your configuration file.
 
+#### Configuration File Import
 Lastly, the configuration file must be imported in the tApp: `<script src="/config.js"></script>`
 The convention for importing the configuration file is to place this code at the bottom of the body, but at the very least, the configuration file must be imported after the rendering section. More information on the configuration file is in the next section.
 
+#### Recap
 To recap, here are the mandatory parts of the loader file:
 - Static HTML structural elements, style, favicons, global scripts, other code in head
 - Rendering section in the body (convention is `<tapp-main></tapp-main>`)
-- tApp import: `<script src="/tApp.js"></script>` (convention is in the head)
+- tApp import: `<script src="/tApp.js"></script>` (convention is in head)
 - Configuration file import: `<script src="/config.js"></script>` (convention is at bottom of body)
 
 ### Configuration File
-Documentation is coming soon.
+The configuration file sets up all of the parameters and routes of the tApp, starting and/or installing when finished. The convention for the tApp configuration file name is `config.js`.
+
+#### Parameters
+
+#### Routes
+
+#### Starting and Installing
+
+#### Recap
 
 ### Views
 Documentation is coming soon.
