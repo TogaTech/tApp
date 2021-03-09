@@ -51,6 +51,20 @@ tApp.route("#/template", function(request) {
 	});
 });
 
+tApp.route("#/custom/<text>", function(request) {
+	tApp.render(`
+		<h1>` + request.data.text + `</h1>
+		<p>To customize the above text, change the url above to "#/custom/YOUR_TEXT_HERE"<br><br>See <a href="#/custom/` + request.data.text + `/subpage">subpage</a> here.</p>
+	`);
+});
+
+tApp.route("#/custom/<text>/subpage", function(request) {
+	tApp.render(`
+		<h1>Subpage For: ` + request.data.text + `</h1>
+		<p>To customize the above text, change the url above to "#/custom/YOUR_TEXT_HERE/subpage"<br><br>See <a href="#/custom/` + request.data.text + `">main page</a> here.</p>
+	`);
+});
+
 tApp.route("#/404", function(request) {
 	tApp.render(`
 		<h1>Error 404</h1>

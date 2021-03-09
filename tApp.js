@@ -7,7 +7,7 @@ class tApp {
 	static database;
 	static currentHash = "/";
 	static get version() {
-		return "v0.8.1";
+		return "v0.8.2";
 	}
 	static configure(params) {
 		if(params == null) {
@@ -387,20 +387,56 @@ class tApp {
 		if(hash == null || hash == "") {
 			hash = "/";
 		}
+		let splitHash = hash.split("/").filter(s => s != "");
 		if(tApp.config.ignoreRoutes != null && tApp.config.ignoreRoutes instanceof Array && tApp.config.ignoreRoutes.includes(hash)) {
 			
+		} else if(tApp.config.forbiddenRoutes != null && tApp.config.forbiddenRoutes instanceof Array && tApp.config.forbiddenRoutes.includes(hash) && tApp.config.errorPages != null && tApp.config.errorPages.forbidden != null) {
+			tApp.updatePage(tApp.config.errorPages.forbidden);
 		} else if(tApp.routes[hash] != null) {
 			tApp.routes[hash]({
 				type: "GET",
 				referrer: tApp.currentHash,
 				data: null
 			});
-		} else if(tApp.config.forbiddenRoutes != null && tApp.config.forbiddenRoutes instanceof Array && tApp.config.forbiddenRoutes.includes(hash) && tApp.config.errorPages != null && tApp.config.errorPages.forbidden != null) {
-			tApp.updatePage(tApp.config.errorPages.forbidden);
-		} else if(tApp.config.errorPages != null && tApp.config.errorPages.notFound != null) {
-			tApp.updatePage(tApp.config.errorPages.notFound);
 		} else {
-			tApp.render("");
+			let routeHashes = Object.keys(tApp.routes);
+			let routeHash;
+			let routeParams = {};
+			for(let i = 0; i < routeHashes.length; i++) {
+				if(routeHash == null) {
+					let splitRoute = routeHashes[i].split("/").filter(s => s != "");
+					if(splitHash.length == splitRoute.length) {
+						let correctRoute = true;
+						for(let j = 0; j < splitHash.length; j++) {
+							if(correctRoute) {
+								if(splitHash[j] == splitRoute[j]) {
+									
+								} else if(splitRoute[j][0] == "<" && splitRoute[j][splitRoute[j].length - 1] == ">") {
+									routeParams[splitRoute[j].substring(1, splitRoute[j].length - 1)] = decodeURI(splitHash[j]);
+								} else {
+									correctRoute = false;
+								}
+							}
+						}
+						if(correctRoute) {
+							routeHash = routeHashes[i];
+						} else {
+							routeParams = {};
+						}
+					}
+				}
+			}
+			if(routeHash != null) {
+				tApp.routes[routeHash]({
+					type: "GET",
+					referrer: tApp.currentHash,
+					data: routeParams
+				});
+			} else if(tApp.config.errorPages != null && tApp.config.errorPages.notFound != null) {
+				tApp.updatePage(tApp.config.errorPages.notFound);
+			} else {
+				tApp.render("");
+			}
 		}
 		tApp.currentHash = hash;
 	}
