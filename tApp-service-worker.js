@@ -1,4 +1,4 @@
-var version = 'v28::';
+var version = 'v29::';
 
 self.addEventListener("install", function(event) {
 	event.waitUntil(() => {
@@ -28,13 +28,15 @@ self.addEventListener("fetch", function(event) {
 					fetch(page).then((response) => {
 						resolve(response);
 					}).catch(() => {
-						resolve(new Response("", {
+						let res = new Response("", {
 							status: 500,
 							statusText: 'Service Unavailable',
 							headers: new Headers({
 								'Content-Type': 'text/html'
 							})
-						}));
+						});
+						Object.defineProperty(res, "url", {value: url});
+						resolve(res);
 					});
 				});
 			}
@@ -98,7 +100,9 @@ self.addEventListener("fetch", function(event) {
 									}
 								});
 								if(request.result != null) {
-									resolve(new Response(request.result.data, request.result.response));
+									let res = new Response(request.result.data, request.result.response);
+									Object.defineProperty(res, "url", {value: url});
+									resolve(res);
 								} else {
 									myFetch(url).then((response) => {
 										resolve(response);

@@ -7,7 +7,7 @@ class tApp {
 	static database;
 	static currentHash = "/";
 	static get version() {
-		return "v0.8.4";
+		return "v0.8.5";
 	}
 	static configure(params) {
 		if(params == null) {
@@ -309,7 +309,9 @@ class tApp {
 				}
 			});
 			if(!ignoreCache && cachedPage != null) {
-				resolve(new Response(cachedPage.data, cachedPage.response));
+				let res = new Response(cachedPage.data, cachedPage.response);
+				Object.defineProperty(res, "url", {value: fullPath});
+				resolve(res);
 			}
 		});
 	}
