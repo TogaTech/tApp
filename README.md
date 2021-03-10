@@ -131,7 +131,7 @@ A route is the end of the URL. The route can either be `/` or start with a `#`. 
 ```
 
 ##### Redirects
-The `tApp.redirect(path)` function redirects the URL to `path`. The `path` can be relative (`#/`) or absolute (`https://www.example.com/`).
+The `tApp.redirect(path, title = document.title)` function redirects the URL to `path` with title `title` (defaults to current page title). The `path` can be relative (`#/`) or absolute (`https://www.example.com/`).
 ```javascript
 tApp.route("/", function(request) {
 	tApp.redirect("#/");
