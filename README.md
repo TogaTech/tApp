@@ -53,7 +53,7 @@ At the top of the configuration file is where many settings of the tApp are conf
 
 ##### Configuration Parameters
 Below is a description of all available configuration parameters. For routes, see the routes section a few sections down. The `target` parameter is the only required option for the configuration, all other parameters of the argument object can be discarded if not necessary for the tApp.
-```
+```javascript
 tApp.configure({
 	target: /* The DOM element for the render section */,
 	ignoreRoutes: /* An array of routes to ignore, this parameter is useful if you have elements with ids on the page and use #id in the URL to navigate to these sections of the page */,
@@ -71,7 +71,7 @@ tApp.configure({
 ```
 
 ##### Sample Configuration
-```
+```javascript
 tApp.configure({
 	target: document.querySelector("tapp-main"),
 	ignoreRoutes: ["#id"],
@@ -92,7 +92,7 @@ tApp.configure({
 A route is the end of the URL. The route can either be `/` or start with a `#`. The convention is to use routes like `#/page/subpage/deeperpage` (which serves the page `https://www.example.com/#/page/subpage/deeperpage`). The route limitations are due to the limits of client-side URL parsing.
 
 `tApp.route(path, renderFunction)` sets up the route. The `renderFunction` is called whenever the route is triggered and takes one parameter: `request`. The `request` is an object with parameters including the type of request (for example, `GET`), the path of the request (for example, `#/custom/Custom%20Text%20Here`), the referrer/previous path (for example, `#/`), and a data object (for example, `{text: "Custom Text Here"}`). Below is an example of a `request`:
-```
+```javascript
 {
 	type: "GET",
 	path: "#/custom/Custom%20Text%20Here"
@@ -105,22 +105,22 @@ A route is the end of the URL. The route can either be `/` or start with a `#`. 
 
 ##### Redirects
 The `tApp.redirect(path)` function redirects the URL to `path`. The `path` can be relative (`#/`) or absolute (`https://www.example.com/`).
-```
+```javascript
 tApp.route("/", function(request) {
-	tApp.redirect("#/"); // redirects the URL from the base route to "#/" for consistency
+	tApp.redirect("#/");
 });
 ```
 
 The `tApp.renderPath(path)` function redirects to a different path and renders `path` as if the user visited `path`, without changing the URL.
-```
+```javascript
 tApp.route("#/index", function(request) {
-	tApp.renderPath("#/"); // similar to the redirect but does not change the URL
+	tApp.renderPath("#/");
 });
 ```
 
 ##### Rendering From HTML
 The `tApp.render(html)` function renders HTML code onto the rendering section. The HTML code can contain resource imports and scripts.
-```
+```javascript
 tApp.route("#/text", function(request) {
 	tApp.render(`
 		<h1>Text</h1>
@@ -131,7 +131,7 @@ tApp.route("#/text", function(request) {
 
 ##### Rendering From File
 The `tApp.renderFile(path)` function renders like `tApp.render(html)`, except the `html` is supplied from an external file. This file is cached if the `caching` parameter of `configure` is not null.
-```
+```javascript
 tApp.route("#/", function(request) {
 	tApp.renderFile("./views/index.html");
 });
@@ -141,7 +141,7 @@ tApp.route("#/", function(request) {
 The `tApp.renderTemplate(path, options)` function renders like `tApp.renderFile(path)`, except there is support for templating. While this templating is in the early stages, by including `{{ varName }}` (spaces optional) in your template and passing in `varName: "value"`, `{{ varName.subVar }}` and `varName: {subVar: "value"}`, or `{{ varName.0 }}` and `varName: ["value", "second", "third"]`, the `{{ varName }}` is replaced with `value`. To override this functionality in the template, use `{\{ varName }}` instead.
 
 `renderTemplateHTML(html, options)` provides the similar functionality to `tApp.renderTemplate(path, options)` but uses HTML instead of a file.
-```
+```javascript
 tApp.route("#/template", function(request) {
 	tApp.renderTemplate("./views/template.html", {
 		header: "Template Header",
@@ -160,7 +160,7 @@ tApp.route("#/template", function(request) {
 
 ##### Rendering With Path Parameters
 Path parameters are a way to add more reusability into routes. By using `<varName>` anywhere in the route as its own section of the path (at the beginning with `/` at the end, at the end with `/` at the beginning, or surrounded by `/`), whenever a path fits the format, the route is triggered, and the `request.data` includes an object with keys of the parameters and values of the input in the URL. Note that path parameter setup (`<varName>`) is only allowed within `tApp.route(path, renderFunction)` and not in other places such as `configuration`.
-```
+```javascript
 tApp.route("#/custom/<text>", function(request) {
 	tApp.render(`
 		<h1>` + request.data.text + `</h1>
@@ -169,7 +169,7 @@ tApp.route("#/custom/<text>", function(request) {
 });
 ```
 
-```
+```javascript
 tApp.route("#/custom/<text>/subpage", function(request) {
 	tApp.render(`
 		<h1>Subpage For: ` + request.data.text + `</h1>
@@ -182,7 +182,7 @@ tApp.route("#/custom/<text>/subpage", function(request) {
 At the bottom of the configuration file (after everything else has been defined), the tApp must be started to begin listening for routes and updating the page accordingly. `tApp.start()` starts the app and returns a promise, `tApp.install(pathToServiceWorker)` installs the app and service worker based on the path to service worker (default is `/tApp-service-worker.js`), and `tApp.update()` attempts to update the app's service worker (updates may not be applied until all instances of the tApp are closed). Note that installing the tApp for full offline usage is restricted to a secure context only (HTTPS) and not supported in IE due to service worker limitations, but persistent caching is still possible, only the loader file, configuration file, and library files need to be opened before going offline.
 
 To start, install, and update the app (with the service worker at `/tApp-service-worker.js`):
-```
+```javascript
 tApp.start().then(() => {
 	tApp.install().then(() => {
 		tApp.update();
