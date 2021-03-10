@@ -391,6 +391,8 @@ class tApp {
 		if(hash == null || hash == "") {
 			hash = "/";
 		}
+		let tmpCurrentHash = tApp.currentHash;
+		tApp.currentHash = hash;
 		let splitHash = hash.split("/").filter(s => s != "");
 		if(tApp.config.ignoreRoutes != null && tApp.config.ignoreRoutes instanceof Array && tApp.config.ignoreRoutes.includes(hash)) {
 			
@@ -399,7 +401,8 @@ class tApp {
 		} else if(tApp.routes[hash] != null) {
 			tApp.routes[hash]({
 				type: "GET",
-				referrer: tApp.currentHash,
+				path: hash,
+				referrer: tmpCurrentHash,
 				data: null
 			});
 		} else {
@@ -433,7 +436,8 @@ class tApp {
 			if(routeHash != null) {
 				tApp.routes[routeHash]({
 					type: "GET",
-					referrer: tApp.currentHash,
+					path: hash,
+					referrer: tmpCurrentHash,
 					data: routeParams
 				});
 			} else if(tApp.config.errorPages != null && tApp.config.errorPages.notFound != null) {
@@ -442,7 +446,6 @@ class tApp {
 				tApp.render("");
 			}
 		}
-		tApp.currentHash = hash;
 	}
 	static loadBackgroundPages() {
 		for(let i = 0; i < tApp.config.caching.backgroundPages.length; i++) {

@@ -62,7 +62,7 @@ tApp.configure({
 		notFound: /* The route to the 404 not found page for when no routes are present to match the URL */,
 		forbidden: /* The route to the 403 forbidden page for when a forbidden route is present in the URL */
 	},
-	caching: {
+	caching: { /* Note that if caching is null, the tApp will not cache. To have caching without any background page, periodic updates, or persistence, use caching: {} */
 		backgroundPages: /* An array of pages to cache in the background asynchronously once the content loads, the convention is to add the configuration file, tApp.js, the loader file, and any view files so that they load faster */,
 		periodicUpdate: /* Millisecond interval to update the cached background pages, if left blank, the background pages will not be continouusly updated and cached */,
 		persistent: /* Boolean whether to use persistent caching for offline (true) or just temporary caching for improved speed (false), defaults to false */
@@ -89,10 +89,110 @@ tApp.configure({
 ```
 
 #### Routes
+A route is the end of the URL. The route can either be `/` or start with a `#`. The convention is to use routes like `#/page/subpage/deeperpage` (which serves the page `https://www.example.com/#/page/subpage/deeperpage`). The route limitations are due to the limits of client-side URL parsing.
+
+`tApp.route(path, renderFunction)` sets up the route. The `renderFunction` is called whenever the route is triggered and takes one parameter: `request`. The `request` is an object with parameters including the type of request (for example, `GET`), the path of the request (for example, `#/custom/Custom%20Text%20Here`), the referrer/previous path (for example, `#/`), and a data object (for example, `{text: "Custom Text Here"}`). Below is an example of a `request`:
+```
+{
+	type: "GET",
+	path: "#/custom/Custom%20Text%20Here"
+	referrer: "#/",
+	data: {
+		text: "Custom Text Here"
+	}
+}
+```
+
+##### Redirects
+The `tApp.redirect(path)` function redirects the URL to `path`. The `path` can be relative (`#/`) or absolute (`https://www.example.com/`).
+```
+tApp.route("/", function(request) {
+	tApp.redirect("#/"); // redirects the URL from the base route to "#/" for consistency
+});
+```
+
+The `tApp.renderPath(path)` function redirects to a different path and renders `path` as if the user visited `path`, without changing the URL.
+```
+tApp.route("#/index", function(request) {
+	tApp.renderPath("#/"); // similar to the redirect but does not change the URL
+});
+```
+
+##### Rendering From HTML
+The `tApp.render(html)` function renders HTML code onto the rendering section. The HTML code can contain resource imports and scripts.
+```
+tApp.route("#/text", function(request) {
+	tApp.render(`
+		<h1>Text</h1>
+		<p>You can place any text here.</p>
+	`);
+});
+```
+
+##### Rendering From File
+The `tApp.renderFile(path)` function renders like `tApp.render(html)`, except the `html` is supplied from an external file. This file is cached if the `caching` parameter of `configure` is not null.
+```
+tApp.route("#/", function(request) {
+	tApp.renderFile("./views/index.html");
+});
+```
+
+##### Rendering From Template
+The `tApp.renderTemplate(path, options)` function renders like `tApp.renderFile(path)`, except there is support for templating. While this templating is in the early stages, by including `{{ varName }}` (spaces optional) in your template and passing in `varName: "value"`, `{{ varName.subVar }}` and `varName: {subVar: "value"}`, or `{{ varName.0 }}` and `varName: ["value", "second", "third"]`, the `{{ varName }}` is replaced with `value`. To override this functionality in the template, use `{\{ varName }}` instead.
+
+`renderTemplateHTML(html, options)` provides the similar functionality to `tApp.renderTemplate(path, options)` but uses HTML instead of a file.
+```
+tApp.route("#/template", function(request) {
+	tApp.renderTemplate("./views/template.html", {
+		header: "Template Header",
+		text: "Sample template text...",
+		list: {
+			header: "Example template list (nested options)",
+			elements: [
+				"First element",
+				"Second element",
+				"Third element"
+			]
+		}
+	});
+});
+```
+
+##### Rendering With Path Parameters
+Path parameters are a way to add more reusability into routes. By using `<varName>` anywhere in the route as its own section of the path (at the beginning with `/` at the end, at the end with `/` at the beginning, or surrounded by `/`), whenever a path fits the format, the route is triggered, and the `request.data` includes an object with keys of the parameters and values of the input in the URL. Note that path parameter setup (`<varName>`) is only allowed within `tApp.route(path, renderFunction)` and not in other places such as `configuration`.
+```
+tApp.route("#/custom/<text>", function(request) {
+	tApp.render(`
+		<h1>` + request.data.text + `</h1>
+		<p>To customize the above text, change the url above to "#/custom/YOUR_TEXT_HERE"<br><br>See <a href="#/custom/` + request.data.text + `/subpage">subpage</a> here.</p>
+	`);
+});
+```
+
+```
+tApp.route("#/custom/<text>/subpage", function(request) {
+	tApp.render(`
+		<h1>Subpage For: ` + request.data.text + `</h1>
+		<p>To customize the above text, change the url above to "#/custom/YOUR_TEXT_HERE/subpage"<br><br>See <a href="#/custom/` + request.data.text + `">main page</a> here.</p>
+	`);
+});
+```
 
 #### Starting and Installing
+At the bottom of the configuration file (after everything else has been defined), the tApp must be started to begin listening for routes and updating the page accordingly. `tApp.start()` starts the app and returns a promise, `tApp.install(pathToServiceWorker)` installs the app and service worker based on the path to service worker (default is `/tApp-service-worker.js`), and `tApp.update()` attempts to update the app's service worker (updates may not be applied until all instances of the tApp are closed). Note that installing the tApp for full offline usage is restricted to a secure context only (HTTPS) and not supported in IE due to service worker limitations, but persistent caching is still possible, only the loader file, configuration file, and library files need to be opened before going offline.
 
-#### Recap
+To start, install, and update the app (with the service worker at `/tApp-service-worker.js`):
+```
+tApp.start().then(() => {
+	tApp.install().then(() => {
+		tApp.update();
+	}).catch((err) => {
+		console.log("Installation not supported due to service worker limitations.");
+	})
+});
+```
+
+The service worker `/tApp-service-worker.js` must be installed at the route of the app to have access to serving offline cached data to the entire app, since service workers are scope restricted.
 
 ### Views
 Documentation is coming soon.
@@ -101,4 +201,4 @@ Documentation is coming soon.
 Documentation is coming soon.
 
 ## Interoperability
-The tApp framework is interoperable with other front-end web frameworks. In your configuration file routes, instead of using a tApp render function, you can call a function from another framework and have that framework either render to the DOM using a function within that framework or return a value that can be rendered through a tApp render function.
+The tApp framework is interoperable with other front-end web frameworks. In your configuration file routes, instead of using a tApp render function, you can call a function from another framework and have that framework either render to the DOM using a function within that framework or return a value that can be rendered through a tApp render function. Combining frameworks allows for the flexibility of choice when it comes to picking from a wide variety of framework options while keeping some of the best features of tApp such as client-side routing, caching, and offline mode.
