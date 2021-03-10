@@ -49,6 +49,44 @@ To recap, here are the mandatory parts of the loader file:
 The configuration file sets up all of the parameters and routes of the tApp, starting and/or installing when finished. The convention for the tApp configuration file name is `config.js`.
 
 #### Parameters
+At the top of the configuration file is where many settings of the tApp are configured.
+
+##### Configuration Parameters
+Below is a description of all available configuration parameters. For routes, see the routes section a few sections down. The `target` parameter is the only required option for the configuration, all other parameters of the argument object can be discarded if not necessary for the tApp.
+```
+tApp.configure({
+	target: /* The DOM element for the render section */,
+	ignoreRoutes: /* An array of routes to ignore, this parameter is useful if you have elements with ids on the page and use #id in the URL to navigate to these sections of the page */,
+	forbiddenRoutes: /* An array of "forbidden" routes, example usage is to protect a page to logged in users, in which case the forbidden routes should only be used to display the forbidden error page and not as the sole logic to check user authentication, the authentication should still be checked server-side with forbidden routes not present for logged in users (hackers can easily circumvent forbidden routes, so they should serve only as an improvement to UX and not as a functional role) */,
+	errorPages: {
+		notFound: /* The route to the 404 not found page for when no routes are present to match the URL */,
+		forbidden: /* The route to the 403 forbidden page for when a forbidden route is present in the URL */
+	},
+	caching: {
+		backgroundPages: /* An array of pages to cache in the background asynchronously once the content loads, the convention is to add the configuration file, tApp.js, the loader file, and any view files so that they load faster */,
+		periodicUpdate: /* Millisecond interval to update the cached background pages, if left blank, the background pages will not be continouusly updated and cached */,
+		persistent: /* Boolean whether to use persistent caching for offline (true) or just temporary caching for improved speed (false), defaults to false */
+	}
+});
+```
+
+##### Sample Configuration
+```
+tApp.configure({
+	target: document.querySelector("tapp-main"),
+	ignoreRoutes: ["#id"],
+	forbiddenRoutes: ["#/forbidden"],
+	errorPages: {
+		notFound: "#/404",
+		forbidden: "#/403"
+	},
+	caching: {
+		backgroundPages: ["./", "./config.js", "/tApp.js", "./views/index.html", "./views/about.html"],
+		periodicUpdate: 60 * 1000,
+		persistent: true
+	}
+});
+```
 
 #### Routes
 
