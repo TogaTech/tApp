@@ -7,7 +7,7 @@ class tApp {
 	static database;
 	static currentHash = "/";
 	static get version() {
-		return "v0.8.5";
+		return "v0.8.6";
 	}
 	static configure(params) {
 		if(params == null) {
@@ -55,7 +55,7 @@ class tApp {
 				error: "tAppError: Invalid configure parameter, caching is not of type Object."
 			}
 		}
-		if(params.caching.backgroundPages != null && !(params.caching.backgroundPages instanceof Array)) {
+		if(params.caching != null && params.caching.backgroundPages != null && !(params.caching.backgroundPages instanceof Array)) {
 			return {
 				valid: false,
 				error: "tAppError: Invalid configure parameter, caching.backgroundPages is not of type Array."
@@ -450,20 +450,22 @@ class tApp {
 		}
 	}
 	static loadBackgroundPages() {
-		for(let i = 0; i < tApp.config.caching.backgroundPages.length; i++) {
-			tApp.get(tApp.config.caching.backgroundPages[i]);
-		}
-		if(tApp.config.caching.periodicUpdate != null) {
-			setTimeout(() => {
-				tApp.loadBackgroundPages();
-			}, tApp.config.caching.periodicUpdate)
+		if(tApp.config.caching != null) {
+			for(let i = 0; i < tApp.config.caching.backgroundPages.length; i++) {
+				tApp.get(tApp.config.caching.backgroundPages[i]);
+			}
+			if(tApp.config.caching.periodicUpdate != null) {
+				setTimeout(() => {
+					tApp.loadBackgroundPages();
+				}, tApp.config.caching.periodicUpdate)
+			}
 		}
 	}
 	static start() {
 		return new Promise((resolve, reject) => {
 			if(!tApp.started) {
 				tApp.started = true;
-				if(tApp.config.caching.persistent) {
+				if(tApp.config.caching != null && tApp.config.caching.persistent) {
 					Object.defineProperty(window, 'indexedDB', {
 						value: window.indexedDB || window.mozIndexedDB || window.webkitIndexedDB || window.msIndexedDB
 					});
