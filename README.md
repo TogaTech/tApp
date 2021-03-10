@@ -225,7 +225,7 @@ The service worker `/tApp-service-worker.js` must be installed at the route of t
 Views are just the rendered files. When requested, views are automatically cached if the `caching` parameter of `configuration` is not `null`. Views can also contain template-like features when combined with template-based render functions. While this templating is in the early stages, by including `{{ varName }}` (spaces optional) in your template and passing in `varName: "value"`, `{{ varName.subVar }}` and `varName: {subVar: "value"}`, or `{{ varName.0 }}` and `varName: ["value", "second", "third"]`, the `{{ varName }}` is replaced with `value`. To override this functionality in the template, use `{\{ varName }}` instead.
 
 ### General Method Documentation
-Documentation is coming soon. However, the above documentation contains most of the information you need to get started with this framework.
+Documentation is coming soon. However, the above documentation is extremely comprehensive and contains most of the information you need to get started with this framework.
 
 ## Interoperability
 The tApp framework is interoperable with other front-end web frameworks. In your configuration file routes, instead of using a tApp render function, you can call a function from another framework and have that framework either render to the DOM using a function within that framework or return a value that can be rendered through a tApp render function. Combining frameworks allows for the flexibility of choice when it comes to picking from a wide variety of framework options while keeping some of the best features of tApp such as client-side routing, caching, and offline mode.
