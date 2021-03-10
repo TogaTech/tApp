@@ -1,6 +1,33 @@
 # tApp
 A framework for building tApps (TogaTech Apps) using modern web technologies (HTML, CSS, JavaScript)
 
+- [Why tApp](#why-tapp)
+- [Key Features](#key-features)
+- [Example](#example)
+- [Documentation](#documentation)
+	* [Library Files](#library-files)
+	* [Loader File](#loader-file)
+		+ [Static Code](#static-code)
+		+ [Rendering Section](#rendering-section)
+		+ [tApp Import](#tapp-import)
+		+ [Configuration File Import](#configuration-file-import)
+		+ [Recap](#recap)
+	* [Configuration File](#configuration-file)
+		+ [Parameters](#parameters)
+			- [Configuration Parameters](#configuration-parameters)
+			- [Sample Configuration](#sample-configuration)
+		+ [Routes](#routes)
+			- [Redirects](#redirects)
+			- [Rendering From HTML](#rendering-from-html)
+			- [Rendering From File](#rendering-from-file)
+			- [Rendering From Template](#rendering-from-template)
+			- [Rendering With Path Parameters](#rendering-with-path-parameters)
+		+ [Starting and Installing](#starting-and-installing)
+	* [Views](#views)
+	* [General Method Documentation](#general-method-documentation)
+- [Interoperability](#interoperability)
+- [Shout-outs](#shout-outs)
+
 ## Why tApp?
 tApps are different than regular websites. Users expect apps to work differently. They don't want page loads when navigating an app, they want a smooth and instantaneous experience. Additionally, users want apps to be accessible offline. tApp helps achieve this goal.
 
