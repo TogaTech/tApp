@@ -436,7 +436,7 @@ class tApp {
 				}
 			}
 		}
-		newHtml = newHTML.replaceAll("{\\%", "{%");
+		newHTML = newHTML.replaceAll("{\\%", "{%");
 		return newHTML;
 	}
 	static renderTemplateHTML(html, options) {
