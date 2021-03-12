@@ -47,7 +47,15 @@ tApp.route("#/template", function(request) {
 				"Second element",
 				"Third element"
 			]
-		}
+		},
+		statement: 3,
+		statement1: 1,
+		statement2: 2,
+		statement3: 0,
+		statement4: 5,
+		statement5: 6,
+		statement6: 8,
+		statement7: 7,
 	});
 });
 

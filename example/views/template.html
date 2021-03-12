@@ -5,6 +5,12 @@
 {% if (text == null) %}
 <p>No text</p>
 {% endif %}
+{% if text == null %}
+<p>Still no text</p>
+{% endif %}
+{% if text != null %}
+<p>More: {{ text }}</p>
+{% endif %}
 <p>Template text above uses {\{text}}</p>
 <h3>{{list.header}}</h3>
 <ul>
@@ -12,3 +18,75 @@
 	<li>{{list.elements.1}}</li>
 	<li>{{list.elements.2}}</li>
 </ul>
+<p>More if statements (using {\% if %}):</p>
+<p>If, else if, else if, else</p>
+{% if statement == 0 %}
+<p>if: 0 (real {{statement}})</p>
+{% elseif(statement == 1) %}
+<p>elseif: 1 (real {{statement}})</p>
+{% elseif (statement == 2) %}
+<p>elseif: 2 (real {{statement}})</p>
+{% else %}
+<p>else: {{ statement }}</p>
+{% endif %}
+-------------------------------
+<p>If, else if, else if, else</p>
+{% if statement1 == 0 %}
+<p>if: 0 (real {{statement1}})</p>
+{% elseif(statement1 == 1) %}
+<p>elseif: 1 (real {{statement1}})</p>
+{% elseif (statement1 == 2) %}
+<p>elseif: 2 (real {{statement1}})</p>
+{% else %}
+<p>else: {{ statement1 }}</p>
+{% endif %}
+-------------------------------
+<p>If, else if, else if, else</p>
+{% if statement2 == 0 %}
+<p>if: 0 (real {{statement2}})</p>
+{% elseif(statement2 == 1) %}
+<p>elseif: 1 (real {{statement2}})</p>
+{% elseif (statement2 == 2) %}
+<p>elseif: 2 (real {{statement2}})</p>
+{% else %}
+<p>else: {{ statement2 }}</p>
+{% endif %}
+-------------------------------
+<p>If, else if, else if, else</p>
+{% if statement3 == 0 %}
+<p>if: 0 (real {{statement3}})</p>
+{% elseif(statement3 == 1) %}
+<p>elseif: 1 (real {{statement3}})</p>
+{% elseif (statement3 == 2) %}
+<p>elseif: 2 (real {{statement3}})</p>
+{% else %}
+<p>else: {{ statement3 }}</p>
+{% endif %}
+-------------------------------
+<p>If, else</p>
+{% if statement4 == 0 %}
+<p>if: 0 (real {{statement4}})</p>
+{% else %}
+<p>else: {{ statement4 }}</p>
+{% endif %}
+-------------------------------
+<p>If, else</p>
+{% if statement5 == 6 %}
+<p>if: 6 (real {{statement5}})</p>
+{% else %}
+<p>else: {{ statement5 }}</p>
+{% endif %}
+-------------------------------
+<p>If, else if</p>
+{% if statement6 == 8 %}
+<p>if: 8 (real {{statement6}})</p>
+{% elseif(statement6 == 7) %}
+<p>elseif: 7 (real {{statement6}})</p>
+{% endif %}
+-------------------------------
+<p>If, else if</p>
+{% if statement7 == 8 %}
+<p>if: 8 (real {{statement7}})</p>
+{% elseif(statement7 == 7) %}
+<p>elseif: 7 (real {{statement7}})</p>
+{% endif %}

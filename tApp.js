@@ -415,25 +415,42 @@ class tApp {
 		let newHTML = "";
 		for(let i = 0; i < splitLines.length; i++) {
 			let trimmed = trim(splitLines[i]);
-			if(tokenStack[tokenStack.length - 1] == null) {
-				if(trimmed.substring(0, 2) == "{%" && trimmed.substring(trimmed.length - 2, trimmed.length) == "%}") {
-					let parsedStatement = trim(trimmed.substring(2, trimmed.length - 2));
-					if(["if ", "if\t", "if("].includes(parsedStatement.substring(0, 3))) {
-						tokenStack.push("IF");
-						let condition = trim(parsedStatement.substring(2));
-						optionsToEval(options);
-						stateStack.push({result: eval(optionsToEval(options) + condition)});
+			if(tokenStack[tokenStack.length - 1] == "IF" && trimmed.replaceAll(" ", "").replaceAll("\t", "") == "{%endif%}") {
+				tokenStack.pop();
+				stateStack.pop();
+			} else if(trimmed.substring(0, 2) == "{%" && trimmed.substring(trimmed.length - 2, trimmed.length) == "%}") {
+				let parsedStatement = trim(trimmed.substring(2, trimmed.length - 2));
+				if(["if ", "if\t", "if("].includes(parsedStatement.substring(0, 3))) {
+					tokenStack.push("IF");
+					let condition = trim(parsedStatement.substring(2));
+					stateStack.push({
+						result: eval(optionsToEval(options) + condition)
+					});
+					stateStack[stateStack.length - 1].executed = stateStack[stateStack.length - 1].result;
+				} else if(["elseif ", "elseif\t", "elseif("].includes(parsedStatement.substring(0, 7))) {
+					if(tokenStack[tokenStack.length - 1] == "IF") {
+						if(!stateStack[stateStack.length - 1].executed) {
+							let condition = trim(parsedStatement.substring(6));
+							stateStack[stateStack.length - 1].result = eval(optionsToEval(options) + condition);
+							stateStack[stateStack.length - 1].executed = stateStack[stateStack.length - 1].result;
+						} else {
+							stateStack[stateStack.length - 1].result = false;
+						}
+					} else {
+						throw "tAppError: Else-if missing an if-statement on line " + (i + 1) + ".";
 					}
-				} else {
-					newHTML += splitLines[i] + "\n";
+				} else if(trimmed.replaceAll(" ", "").replaceAll("\t", "") == "{%else%}") {
+					if(tokenStack[tokenStack.length - 1] == "IF") {
+						stateStack[stateStack.length - 1].result = !stateStack[stateStack.length - 1].executed;
+						stateStack[stateStack.length - 1].executed = stateStack[stateStack.length - 1].result;
+					} else {
+						throw "tAppError: Else missing an if-statement on line " + (i + 1) + ".";
+					}
 				}
-			} else if(tokenStack[tokenStack.length - 1] == "IF") {
-				if(trimmed.replaceAll(" ", "") == "{%endif%}") {
-					tokenStack.pop();
-					stateStack.pop();
-				} else if(stateStack[stateStack.length - 1].result) {
-					newHTML += splitLines[i] + "\n";
-				}
+			} else if(tokenStack[tokenStack.length - 1] == "IF" && stateStack[stateStack.length - 1].result) {
+				newHTML += splitLines[i] + "\n";
+			} else if(tokenStack[tokenStack.length - 1] == null) {
+				newHTML += splitLines[i] + "\n";
 			}
 		}
 		newHTML = newHTML.replaceAll("{\\%", "{%");
