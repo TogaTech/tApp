@@ -18,6 +18,11 @@
 	<li>{{list.elements.1}}</li>
 	<li>{{list.elements.2}}</li>
 </ul>
+<p>1 + 1 = {{{ 1 + 1 }}} ({{\{ 1 + 1 }}})</p>
+<p>10 + 5 = {{{ testVal += 3; testVal + 2; }}} ({{\{ testVal += 3; testVal + 2; }}})</p>
+<p>10 + 3 = {{{ testVal }}} ({{\{ testVal }}})</p>
+<p>testVal before: {{ testVal }} ({\{ testVal }}, notice how these values in {\{ }} are pre-rendered safely before code execution)</p>
+<p>testVal after: {{{ testVal }}} ({{\{ testVal }}})</p>
 <p>More if statements (using {\% if %}):</p>
 <p>If, else if, else if, else</p>
 {% if statement == 0 %}

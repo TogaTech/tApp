@@ -56,6 +56,7 @@ tApp.route("#/template", function(request) {
 		statement5: 6,
 		statement6: 8,
 		statement7: 7,
+		testVal: 10
 	});
 });
 

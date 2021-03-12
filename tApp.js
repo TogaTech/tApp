@@ -7,7 +7,7 @@ class tApp {
 	static database;
 	static currentHash = "/";
 	static get version() {
-		return "v0.8.10";
+		return "v0.8.11";
 	}
 	static configure(params) {
 		if(params == null) {
@@ -361,6 +361,37 @@ class tApp {
 			});
 		});
 	}
+	static eval(code) {
+		return (function(code) {
+			return eval(code);
+		})(code);
+	}
+	static optionsToEval(data) {
+		let evalStr = "";
+		let keys = Object.keys(data);
+		for(let i = 0; i < keys.length; i++) {
+			try {
+				evalStr += "let " + keys[i] + " = " + JSON.stringify(data[keys[i]]) + ";";
+			} catch(err) {
+				evalStr += "let " + keys[i] + " = " + data[keys[i]] + ";";
+			}
+		}
+		return evalStr;
+	}
+	static restoreOptions(data) {
+		let evalStr = "let _____returnOptions = {};";
+		let keys = Object.keys(data);
+		for(let i = 0; i < keys.length; i++) {
+			evalStr += "_____returnOptions." + keys[i] + " = " + keys[i] + ";";
+		}
+		return evalStr;
+	}
+	static evalInContext(code, data) {
+		if(data == null) {
+			data = {};
+		}
+		return tApp.eval(tApp.optionsToEval(data) + "let _____result = (function() {return eval(\"" + code.replaceAll("\"", "\\\"") + "\")})();" + tApp.restoreOptions(data) + "[_____result, _____returnOptions]");
+	}
 	static templateToHTML(html, options) {
 		function convertTemplate(template, parameters, prefix) {
 			let keys = Object.keys(parameters);
@@ -395,20 +426,11 @@ class tApp {
 			returnStr = returnStr.substring(0, index + 1);
 			return returnStr;
 		}
-		function optionsToEval(data) {
-			let evalStr = "";
-			let keys = Object.keys(data);
-			for(let i = 0; i < keys.length; i++) {
-				try {
-					evalStr += "let " + keys[i] + " = " + JSON.stringify(data[keys[i]]) + ";";
-				} catch(err) {
-					evalStr += "let " + keys[i] + " = " + data[keys[i]] + ";";
-				}
-			}
-			return evalStr;
-		}
+		html = html.replaceAll("{{\\{", "{{\\\\{");
+		html = html.replaceAll("{{{", "{{\\{");
 		html = convertTemplate(html, options, "");
 		html = html.replaceAll("{\\{", "{{");
+		html = html.replaceAll("{\\\\{", "{\\{");
 		let splitLines = html.split("\n");
 		let tokenStack = [];
 		let stateStack = [];
@@ -424,14 +446,14 @@ class tApp {
 					tokenStack.push("IF");
 					let condition = trim(parsedStatement.substring(2));
 					stateStack.push({
-						result: eval(optionsToEval(options) + condition)
+						result: tApp.eval(tApp.optionsToEval(options) + condition)
 					});
 					stateStack[stateStack.length - 1].executed = stateStack[stateStack.length - 1].result;
 				} else if(["elseif ", "elseif\t", "elseif("].includes(parsedStatement.substring(0, 7))) {
 					if(tokenStack[tokenStack.length - 1] == "IF") {
 						if(!stateStack[stateStack.length - 1].executed) {
 							let condition = trim(parsedStatement.substring(6));
-							stateStack[stateStack.length - 1].result = eval(optionsToEval(options) + condition);
+							stateStack[stateStack.length - 1].result = tApp.eval(tApp.optionsToEval(options) + condition);
 							stateStack[stateStack.length - 1].executed = stateStack[stateStack.length - 1].result;
 						} else {
 							stateStack[stateStack.length - 1].result = false;
@@ -448,12 +470,32 @@ class tApp {
 					}
 				}
 			} else if(tokenStack[tokenStack.length - 1] == "IF" && stateStack[stateStack.length - 1].result) {
-				newHTML += splitLines[i] + "\n";
+				let newRes = splitLines[i];
+				let it = newRes.matchAll(new RegExp("{{{[\\s|\\t]*(.+?(?=}}}))[\\s|\\t]*}}}", "g"));
+				let next = it.next();
+				while(!next.done) {
+					console.log(next.value[1]);
+					let contextEval = tApp.evalInContext(trim(next.value[1]), options);
+					options = contextEval[1];
+					newRes = newRes.replace(next.value[0], contextEval[0]);
+					next = it.next();
+				}
+				newHTML += newRes + "\n";
 			} else if(tokenStack[tokenStack.length - 1] == null) {
-				newHTML += splitLines[i] + "\n";
+				let newRes = splitLines[i];
+				let it = newRes.matchAll(new RegExp("{{{[\\s|\\t]*(.+?(?=}}}))[\\s|\\t]*}}}", "g"));
+				let next = it.next();
+				while(!next.done) {
+					let contextEval = tApp.evalInContext(trim(next.value[1]), options);
+					options = contextEval[1];
+					newRes = newRes.replace(next.value[0], contextEval[0]);
+					next = it.next();
+				}
+				newHTML += newRes + "\n";
 			}
 		}
 		newHTML = newHTML.replaceAll("{\\%", "{%");
+		newHTML = newHTML.replaceAll("{{\\{", "{{{");
 		return newHTML;
 	}
 	static renderTemplateHTML(html, options) {
