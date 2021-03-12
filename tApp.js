@@ -416,7 +416,7 @@ class tApp {
 		for(let i = 0; i < splitLines.length; i++) {
 			let trimmed = trim(splitLines[i]);
 			if(tokenStack[tokenStack.length - 1] == null) {
-				if(trimmed.substring(0, 2) == "<%" && trimmed.substring(trimmed.length - 2, trimmed.length) == "%>") {
+				if(trimmed.substring(0, 2) == "{%" && trimmed.substring(trimmed.length - 2, trimmed.length) == "%}") {
 					let parsedStatement = trim(trimmed.substring(2, trimmed.length - 2));
 					if(["if ", "if\t", "if("].includes(parsedStatement.substring(0, 3))) {
 						tokenStack.push("IF");
@@ -428,7 +428,7 @@ class tApp {
 					newHTML += splitLines[i] + "\n";
 				}
 			} else if(tokenStack[tokenStack.length - 1] == "IF") {
-				if(trimmed.replaceAll(" ", "") == "<%endif%>") {
+				if(trimmed.replaceAll(" ", "") == "{%endif%}") {
 					tokenStack.pop();
 					stateStack.pop();
 				} else if(stateStack[stateStack.length - 1].result) {
@@ -436,6 +436,7 @@ class tApp {
 				}
 			}
 		}
+		newHtml = newHTML.replaceAll("{\\%", "{%");
 		return newHTML;
 	}
 	static renderTemplateHTML(html, options) {

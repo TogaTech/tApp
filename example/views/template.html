@@ -1,10 +1,10 @@
 <h1>{{ header }}</h1>
-<% if(text != null) %>
+{% if(text != null) %}
 <p>{{text}}</p>
-<% endif %>
-<% if (text == null) %>
+{% endif %}
+{% if (text == null) %}
 <p>No text</p>
-<% endif %>
+{% endif %}
 <p>Template text above uses {\{text}}</p>
 <h3>{{list.header}}</h3>
 <ul>
