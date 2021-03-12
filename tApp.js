@@ -7,7 +7,7 @@ class tApp {
 	static database;
 	static currentHash = "/";
 	static get version() {
-		return "v0.8.8";
+		return "v0.8.9";
 	}
 	static configure(params) {
 		if(params == null) {
@@ -361,20 +361,85 @@ class tApp {
 			});
 		});
 	}
-	static renderTemplateHTML(html, options) {
+	static templateToHTML(html, options) {
 		function convertTemplate(template, parameters, prefix) {
 			let keys = Object.keys(parameters);
 			for(let i = 0; i < keys.length; i++) {
 				if(parameters[keys[i]] instanceof Object) {
 					template = convertTemplate(template, parameters[keys[i]], prefix + keys[i] + ".");
 				} else {
-					template = template.replaceAll(new RegExp("{{\\s*" + prefix + keys[i] + "\\s*}}", "g"), parameters[keys[i]]);
+					template = template.replaceAll(new RegExp("{{[\\s|\\t]*" + prefix + keys[i] + "[\\s|\\t]*}}", "g"), parameters[keys[i]]);
 				}
 			}
 			return template;
 		}
+		function trim(str) {
+			let returnStr = "";
+			let word = false;
+			for(let i = 0; i < str.length; i++) {
+				if(!word && str[i] != " " && str[i] != "\t") {
+					word = true;
+				}
+				if(word) {
+					returnStr += str[i];
+				}
+			}
+			word = false;
+			let index = returnStr.length - 1;
+			for(let i = returnStr.length - 1; i >= 0; i--) {
+				if(!word && returnStr[i] != " " && returnStr[i] != "\t") {
+					word = true;
+					index = i;
+				}
+			}
+			returnStr = returnStr.substring(0, index + 1);
+			return returnStr;
+		}
+		function optionsToEval(data) {
+			let evalStr = "";
+			let keys = Object.keys(data);
+			for(let i = 0; i < keys.length; i++) {
+				try {
+					evalStr += "let " + keys[i] + " = " + JSON.stringify(data[keys[i]]) + ";";
+				} catch(err) {
+					evalStr += "let " + keys[i] + " = " + data[keys[i]] + ";";
+				}
+			}
+			return evalStr;
+		}
 		html = convertTemplate(html, options, "");
 		html = html.replaceAll("{\\{", "{{");
+		let splitLines = html.split("\n");
+		let tokenStack = [];
+		let stateStack = [];
+		let newHTML = "";
+		for(let i = 0; i < splitLines.length; i++) {
+			let trimmed = trim(splitLines[i]);
+			if(tokenStack[tokenStack.length - 1] == null) {
+				if(trimmed.substring(0, 2) == "<%" && trimmed.substring(trimmed.length - 2, trimmed.length) == "%>") {
+					let parsedStatement = trim(trimmed.substring(2, trimmed.length - 2));
+					if(["if ", "if\t", "if("].includes(parsedStatement.substring(0, 3))) {
+						tokenStack.push("IF");
+						let condition = trim(parsedStatement.substring(2));
+						optionsToEval(options);
+						stateStack.push({result: eval(optionsToEval(options) + condition)});
+					}
+				} else {
+					newHTML += splitLines[i] + "\n";
+				}
+			} else if(tokenStack[tokenStack.length - 1] == "IF") {
+				if(trimmed.replaceAll(" ", "") == "<%endif%>") {
+					tokenStack.pop();
+					stateStack.pop();
+				} else if(stateStack[stateStack.length - 1].result) {
+					newHTML += splitLines[i] + "\n";
+				}
+			}
+		}
+		return newHTML;
+	}
+	static renderTemplateHTML(html, options) {
+		html = tApp.templateToHTML(html, options);
 		tApp.render(html);
 	}
 	static renderTemplate(path, options) {
