@@ -370,10 +370,14 @@ class tApp {
 		let evalStr = "";
 		let keys = Object.keys(data);
 		for(let i = 0; i < keys.length; i++) {
-			try {
-				evalStr += "let " + keys[i] + " = " + JSON.stringify(data[keys[i]]) + ";";
-			} catch(err) {
-				evalStr += "let " + keys[i] + " = " + data[keys[i]] + ";";
+			if(typeof data[keys[i]] == "function") {
+				evalStr += "let " + keys[i] + " = " + data[keys[i]].toString() + ";";
+			} else {
+				try {
+					evalStr += "let " + keys[i] + " = " + JSON.stringify(data[keys[i]]) + ";";
+				} catch(err) {
+					evalStr += "let " + keys[i] + " = " + data[keys[i]] + ";";
+				}
 			}
 		}
 		return evalStr;
@@ -390,7 +394,8 @@ class tApp {
 		if(data == null) {
 			data = {};
 		}
-		return tApp.eval(tApp.optionsToEval(data) + "let _____result = (function() {return eval(\"" + code.replaceAll("\"", "\\\"") + "\")})();" + tApp.restoreOptions(data) + "[_____result, _____returnOptions]");
+		// return tApp.eval(tApp.optionsToEval(data) + "let _____result = (function() {return eval(\"" + code.replaceAll("\"", "\\\"") + "\")})();" + tApp.restoreOptions(data) + "[_____result, _____returnOptions]");
+		return tApp.eval(tApp.optionsToEval(data) + "let _____result = " + code + ";" + tApp.restoreOptions(data) + "[_____result, _____returnOptions]");
 	}
 	static templateToHTML(html, options) {
 		function convertTemplate(template, parameters, prefix) {
@@ -425,6 +430,12 @@ class tApp {
 			}
 			returnStr = returnStr.substring(0, index + 1);
 			return returnStr;
+		}
+		let it = html.matchAll(new RegExp("{#.+?(?=#})#}", "g"));
+		let next = it.next();
+		while(!next.done) {
+			html = html.replace(next.value[0], "");
+			next = it.next();
 		}
 		html = html.replaceAll("{{\\{", "{{\\\\{");
 		html = html.replaceAll("{{{", "{{\\{");
@@ -469,24 +480,23 @@ class tApp {
 						throw "tAppError: Else missing an if-statement on line " + (i + 1) + ".";
 					}
 				}
-			} else if(tokenStack[tokenStack.length - 1] == "IF" && stateStack[stateStack.length - 1].result) {
+			} else if((tokenStack[tokenStack.length - 1] == "IF" && stateStack[stateStack.length - 1].result) || tokenStack[tokenStack.length - 1] == null) {
 				let newRes = splitLines[i];
-				let it = newRes.matchAll(new RegExp("{{{[\\s|\\t]*(.+?(?=}}}))[\\s|\\t]*}}}", "g"));
+				let it = newRes.matchAll(new RegExp("{{{@[\\s|\\t]*(.+?(?=}}}))[\\s|\\t]*}}}", "g"));
 				let next = it.next();
 				while(!next.done) {
-					console.log(next.value[1]);
 					let contextEval = tApp.evalInContext(trim(next.value[1]), options);
 					options = contextEval[1];
-					newRes = newRes.replace(next.value[0], contextEval[0]);
+					newRes = newRes.replace(next.value[0], "");
 					next = it.next();
 				}
-				newHTML += newRes + "\n";
-			} else if(tokenStack[tokenStack.length - 1] == null) {
-				let newRes = splitLines[i];
-				let it = newRes.matchAll(new RegExp("{{{[\\s|\\t]*(.+?(?=}}}))[\\s|\\t]*}}}", "g"));
-				let next = it.next();
+				it = newRes.matchAll(new RegExp("{{{[\\s|\\t]*(.+?(?=}}}))[\\s|\\t]*}}}", "g"));
+				next = it.next();
 				while(!next.done) {
 					let contextEval = tApp.evalInContext(trim(next.value[1]), options);
+					if(contextEval[0] == null) {
+						contextEval[0] = "";
+					}
 					options = contextEval[1];
 					newRes = newRes.replace(next.value[0], contextEval[0]);
 					next = it.next();

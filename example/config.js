@@ -56,7 +56,14 @@ tApp.route("#/template", function(request) {
 		statement5: 6,
 		statement6: 8,
 		statement7: 7,
-		testVal: 10
+		testVal: 10,
+		loop: function(elements) {
+			let returnStr = "";
+			for(let i = 0; i < elements.length; i++) {
+				returnStr += `<li>${elements[i]}</li>\n`;
+			}
+			return returnStr;
+		}
 	});
 });
 
