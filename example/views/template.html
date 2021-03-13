@@ -23,6 +23,14 @@
 <ul>
 	{{{ loop(list.elements); }}}
 </ul>
+<h3>{{list.header}} - While Loop (using {\% while %})</h3>
+<ul>
+	{{{@ i = 0; }}}
+	{% while (i < list.elements.length) %}
+	<li>{{{ list.elements[i] }}}</li>
+	{{{@ i++; }}}
+	{% endwhile %}
+</ul>
 <p>1 + 1 = {{{ 1 + 1 }}} ({{\{ 1 + 1 }}})</p>
 <p>10 + 5 = {{{ testVal += 3; testVal + 2; }}} ({{\{ testVal += 3; testVal + 2; }}})</p>
 <p>10 + 3 = {{{ testVal }}} ({{\{ testVal }}})</p>
@@ -34,8 +42,8 @@
 <p>if: 0 (real {{statement}})</p>
 {% elseif(statement == 1) %}
 <p>elseif: 1 (real {{statement}})</p>
-{% elseif (statement == 2) %}
-<p>elseif: 2 (real {{statement}})</p>
+{% else if (statement == 2) %}
+<p>else if: 2 (real {{statement}})</p>
 {% else %}
 <p>else: {{ statement }}</p>
 {% endif %}
@@ -45,8 +53,8 @@
 <p>if: 0 (real {{statement1}})</p>
 {% elseif(statement1 == 1) %}
 <p>elseif: 1 (real {{statement1}})</p>
-{% elseif (statement1 == 2) %}
-<p>elseif: 2 (real {{statement1}})</p>
+{% else if (statement1 == 2) %}
+<p>else if: 2 (real {{statement1}})</p>
 {% else %}
 <p>else: {{ statement1 }}</p>
 {% endif %}
@@ -56,8 +64,8 @@
 <p>if: 0 (real {{statement2}})</p>
 {% elseif(statement2 == 1) %}
 <p>elseif: 1 (real {{statement2}})</p>
-{% elseif (statement2 == 2) %}
-<p>elseif: 2 (real {{statement2}})</p>
+{% else if (statement2 == 2) %}
+<p>else if: 2 (real {{statement2}})</p>
 {% else %}
 <p>else: {{ statement2 }}</p>
 {% endif %}
@@ -67,8 +75,8 @@
 <p>if: 0 (real {{statement3}})</p>
 {% elseif(statement3 == 1) %}
 <p>elseif: 1 (real {{statement3}})</p>
-{% elseif (statement3 == 2) %}
-<p>elseif: 2 (real {{statement3}})</p>
+{% else if (statement3 == 2) %}
+<p>else if: 2 (real {{statement3}})</p>
 {% else %}
 <p>else: {{ statement3 }}</p>
 {% endif %}

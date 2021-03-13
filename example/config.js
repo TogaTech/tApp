@@ -63,7 +63,8 @@ tApp.route("#/template", function(request) {
 				returnStr += `<li>${elements[i]}</li>\n`;
 			}
 			return returnStr;
-		}
+		},
+		i: 0
 	});
 });
 

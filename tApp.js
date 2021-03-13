@@ -7,7 +7,7 @@ class tApp {
 	static database;
 	static currentHash = "/";
 	static get version() {
-		return "v0.8.12";
+		return "v0.9.1";
 	}
 	static configure(params) {
 		if(params == null) {
@@ -397,7 +397,7 @@ class tApp {
 		// return tApp.eval(tApp.optionsToEval(data) + "let _____result = (function() {return eval(\"" + code.replaceAll("\"", "\\\"") + "\")})();" + tApp.restoreOptions(data) + "[_____result, _____returnOptions]");
 		return tApp.eval(tApp.optionsToEval(data) + "let _____result = " + code + ";" + tApp.restoreOptions(data) + "[_____result, _____returnOptions]");
 	}
-	static templateToHTML(html, options) {
+	static compileTemplate(html, options) {
 		function convertTemplate(template, parameters, prefix) {
 			let keys = Object.keys(parameters);
 			for(let i = 0; i < keys.length; i++) {
@@ -451,6 +451,14 @@ class tApp {
 			if(tokenStack[tokenStack.length - 1] == "IF" && trimmed.replaceAll(" ", "").replaceAll("\t", "") == "{%endif%}") {
 				tokenStack.pop();
 				stateStack.pop();
+			} else if(tokenStack[tokenStack.length - 1] == "WHILE" && trimmed.replaceAll(" ", "").replaceAll("\t", "") == "{%endwhile%}") {
+				stateStack[stateStack.length - 1].result = tApp.eval(tApp.optionsToEval(options) + stateStack[stateStack.length - 1].condition);
+				if(!stateStack[stateStack.length - 1].result) {
+					tokenStack.pop();
+					stateStack.pop();
+				} else {
+					i = stateStack[stateStack.length - 1].startLine;
+				}
 			} else if(trimmed.substring(0, 2) == "{%" && trimmed.substring(trimmed.length - 2, trimmed.length) == "%}") {
 				let parsedStatement = trim(trimmed.substring(2, trimmed.length - 2));
 				if(["if ", "if\t", "if("].includes(parsedStatement.substring(0, 3))) {
@@ -472,6 +480,18 @@ class tApp {
 					} else {
 						throw "tAppError: Else-if missing an if-statement on line " + (i + 1) + ".";
 					}
+				} else if(["else if ", "else if\t", "else if("].includes(parsedStatement.substring(0, 8))) {
+					if(tokenStack[tokenStack.length - 1] == "IF") {
+						if(!stateStack[stateStack.length - 1].executed) {
+							let condition = trim(parsedStatement.substring(7));
+							stateStack[stateStack.length - 1].result = tApp.eval(tApp.optionsToEval(options) + condition);
+							stateStack[stateStack.length - 1].executed = stateStack[stateStack.length - 1].result;
+						} else {
+							stateStack[stateStack.length - 1].result = false;
+						}
+					} else {
+						throw "tAppError: Else-if missing an if-statement on line " + (i + 1) + ".";
+					}
 				} else if(trimmed.replaceAll(" ", "").replaceAll("\t", "") == "{%else%}") {
 					if(tokenStack[tokenStack.length - 1] == "IF") {
 						stateStack[stateStack.length - 1].result = !stateStack[stateStack.length - 1].executed;
@@ -479,8 +499,16 @@ class tApp {
 					} else {
 						throw "tAppError: Else missing an if-statement on line " + (i + 1) + ".";
 					}
+				} else if(["while ", "while\t", "while("].includes(parsedStatement.substring(0, 6))) {
+					tokenStack.push("WHILE");
+					let condition = trim(parsedStatement.substring(5));
+					stateStack.push({
+						condition: condition,
+						result: tApp.eval(tApp.optionsToEval(options) + condition),
+						startLine: i
+					});
 				}
-			} else if((tokenStack[tokenStack.length - 1] == "IF" && stateStack[stateStack.length - 1].result) || tokenStack[tokenStack.length - 1] == null) {
+			} else if((tokenStack[tokenStack.length - 1] == "IF" && stateStack[stateStack.length - 1].result) || tokenStack[tokenStack.length - 1] == null || (tokenStack[tokenStack.length - 1] == "WHILE" && stateStack[stateStack.length - 1].result)) {
 				let newRes = splitLines[i];
 				let it = newRes.matchAll(new RegExp("{{{@[\\s|\\t]*(.+?(?=}}}))[\\s|\\t]*}}}", "g"));
 				let next = it.next();
@@ -509,7 +537,7 @@ class tApp {
 		return newHTML;
 	}
 	static renderTemplateHTML(html, options) {
-		html = tApp.templateToHTML(html, options);
+		html = tApp.compileTemplate(html, options);
 		tApp.render(html);
 	}
 	static renderTemplate(path, options) {
