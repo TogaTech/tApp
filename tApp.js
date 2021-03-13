@@ -383,10 +383,10 @@ class tApp {
 		return evalStr;
 	}
 	static restoreOptions(data) {
-		let evalStr = "let _____returnOptions = {};";
+		let evalStr = "let _____tApp_____returnOptions = {};";
 		let keys = Object.keys(data);
 		for(let i = 0; i < keys.length; i++) {
-			evalStr += "_____returnOptions." + keys[i] + " = " + keys[i] + ";";
+			evalStr += "_____tApp_____returnOptions." + keys[i] + " = " + keys[i] + ";";
 		}
 		return evalStr;
 	}
@@ -394,8 +394,7 @@ class tApp {
 		if(data == null) {
 			data = {};
 		}
-		// return tApp.eval(tApp.optionsToEval(data) + "let _____result = (function() {return eval(\"" + code.replaceAll("\"", "\\\"") + "\")})();" + tApp.restoreOptions(data) + "[_____result, _____returnOptions]");
-		return tApp.eval(tApp.optionsToEval(data) + "let _____result = " + code + ";" + tApp.restoreOptions(data) + "[_____result, _____returnOptions]");
+		return tApp.eval(tApp.optionsToEval(data) + "let _____tApp_____result = (function() {return eval(\"" + code.replaceAll("\"", "\\\"") + "\")})();" + tApp.restoreOptions(data) + "[_____tApp_____result, _____tApp_____returnOptions]");
 	}
 	static compileTemplate(html, options) {
 		function convertTemplate(template, parameters, prefix) {
