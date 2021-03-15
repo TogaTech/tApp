@@ -401,10 +401,23 @@ class tApp {
 	static getComponent(id) {
 		return tApp.components[id];
 	}
+	static removeComponent(id) {
+		let els = document.querySelectorAll(`[tapp-component="${id}"]`);
+		for(let i = 0; i < els.length; i++) {
+			els[i].remove();
+		}
+		if(tApp.getComponent(id) == null) {
+			return false;
+		} else {
+			delete tApp.components[id];
+			return true;
+		}
+	}
 	static updateComponent(component) {
 		let compiled = tApp.compileComponent(component, component.props, component.parent);
-		if(document.querySelector(`[tapp-component="${component.id}"]`) != null) {
-			document.querySelector(`[tapp-component="${component.id}"]`).outerHTML = compiled;
+		let els = document.querySelectorAll(`[tapp-component="${component.id}"]`);
+		for(let i = 0; i < els.length; i++) {
+			els[i].outerHTML = compiled;
 		}
 	}
 	static compileComponent(component, props = {}, parent = "global") {
@@ -838,7 +851,7 @@ tApp.Component = class {
 	#parent;
 	#children;
 	constructor(state, parent = "global") {
-		this.#id = new Date().toJSON() + "::" + Math.random().toString(36).substr(2) + "::" + Math.random().toString(36).substr(2) + "::" + Math.random().toString(36).substr(2) + "::" + Math.random().toString(36).substr(2);
+		this.#id = new Date().toJSON() + "::" + Math.random().toString(36).substr(2) + "::" + Math.random().toString(36).substr(2);
 		if(parent != "") {
 			if(typeof parent == "string") {
 				this.#parent = tApp.getComponent(parent);
@@ -869,6 +882,10 @@ tApp.Component = class {
 	}
 	get children() {
 		return this.#children;
+	}
+	clearChildren() {
+		this.#children = [];
+		return true;
 	}
 	get childrenIds() {
 		return this.#children.map((child) => {return child.id});
@@ -901,6 +918,15 @@ tApp.Component = class {
 	}
 	render(props) {
 		throw "tAppComponentError: Render method must be overridden.";
+	}
+	destroy() {
+		for(let i = 0; i < this.#children.length; i++) {
+			this.#children[i].destroy();
+		}
+		this.#children = [];
+		this.#parent = null;
+		tApp.removeComponent(this.#id);
+		return true;
 	}
 	toString() {
 		return tApp.compileComponent(this);

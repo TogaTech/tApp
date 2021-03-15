@@ -43,6 +43,9 @@ class Counter extends tApp.Component {
 		}
 	}
     render(props) {
+	    for(let i = 0; i < this.children.length; i++) {
+		    this.children[i].destroy();
+	    }
 	    return (`
 <div>
 	[[
