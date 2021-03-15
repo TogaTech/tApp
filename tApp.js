@@ -395,7 +395,6 @@ class tApp {
 		if(data == null) {
 			data = {};
 		}
-		// return tApp.eval(tApp.optionsToEval(data) + "let _____tApp_____result = (function() {return eval(\"" + code.replaceAll("\"", "\\\"") + "\")})();" + tApp.restoreOptions(data) + "[_____tApp_____result, _____tApp_____returnOptions]");
 		return tApp.eval(tApp.optionsToEval(data) + `let _____tApp_____result = (function() {return eval("${code.replaceAll("\"", "\\\"")}")})();${tApp.restoreOptions(data)}[_____tApp_____result, _____tApp_____returnOptions]`);
 	}
 	static getComponent(id) {
