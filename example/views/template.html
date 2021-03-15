@@ -23,6 +23,10 @@
 <ul>
 	{{{ loop(list.elements); }}}
 </ul>
+<h3>{{list.header}} - Looping With Components</h3>
+[[ ListComponent {
+	elements: list.elements
+} ]]
 <h3>{{list.header}} - While Loop (using {\% while %})</h3>
 <ul>
 	{{{@ i = 0; }}}
@@ -32,7 +36,10 @@
 	{% endwhile %}
 </ul>
 <p>1 + 1 = {{{ 1 + 1 }}} ({{\{ 1 + 1 }}})</p>
-<p>10 + 5 = {{{ testVal += 3; testVal + 2; }}} ({{\{ testVal += 3; testVal + 2; }}})</p>
+<p>10 + 5 = {{{
+	testVal += 3;
+	testVal + 2;
+}}} ({{\{ testVal += 3; testVal + 2; }}})</p>
 <p>10 + 3 = {{{ testVal }}} ({{\{ testVal }}})</p>
 <p>testVal before: {{ testVal }} ({\{ testVal }}, notice how these values in {\{ }} are pre-rendered safely before code execution)</p>
 <p>testVal after: {{{ testVal }}} ({{\{ testVal }}})</p>

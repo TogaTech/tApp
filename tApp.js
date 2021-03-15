@@ -2,12 +2,13 @@ class tApp {
 	static config = {};
 	static routes = {};
 	static cache = {};
+	static components = {};
 	static cacheSize = 0;
 	static started = false;
 	static database;
 	static currentHash = "/";
 	static get version() {
-		return "v0.9.1";
+		return "v0.10.0";
 	}
 	static configure(params) {
 		if(params == null) {
@@ -394,9 +395,69 @@ class tApp {
 		if(data == null) {
 			data = {};
 		}
-		return tApp.eval(tApp.optionsToEval(data) + "let _____tApp_____result = (function() {return eval(\"" + code.replaceAll("\"", "\\\"") + "\")})();" + tApp.restoreOptions(data) + "[_____tApp_____result, _____tApp_____returnOptions]");
+		// return tApp.eval(tApp.optionsToEval(data) + "let _____tApp_____result = (function() {return eval(\"" + code.replaceAll("\"", "\\\"") + "\")})();" + tApp.restoreOptions(data) + "[_____tApp_____result, _____tApp_____returnOptions]");
+		return tApp.eval(tApp.optionsToEval(data) + `let _____tApp_____result = (function() {return eval("${code.replaceAll("\"", "\\\"")}")})();${tApp.restoreOptions(data)}[_____tApp_____result, _____tApp_____returnOptions]`);
 	}
-	static compileTemplate(html, options) {
+	static getComponent(id) {
+		return tApp.components[id];
+	}
+	static updateComponent(component) {
+		let compiled = tApp.compileComponent(component, component.props, component.parent);
+		if(document.querySelector(`[tapp-component="${component.id}"]`) != null) {
+			document.querySelector(`[tapp-component="${component.id}"]`).outerHTML = compiled;
+		}
+	}
+	static compileComponent(component, props = {}, parent = "global") {
+		if(component instanceof tApp.Component) {
+			tApp.components[component.id] = component;
+			if(typeof props == "string") {
+				props = JSON.parse(props);
+			}
+			let rendered = component.render(props);
+			let parentState = null;
+			if(component.parent != null) {
+				parentState = component.parent.state;
+			}
+			return tApp.compileTemplate(rendered.replace(`>`, ` tapp-component="${component.id}">`), {
+				props: props,
+				state: component.state,
+				parent: {
+					state: parentState
+				},
+				_this: "tApp.getComponent(this.getAttribute('tapp-component'))"
+			}, component.id);
+		} else {
+			function trim(str) {
+				let returnStr = "";
+				let word = false;
+				for(let i = 0; i < str.length; i++) {
+					if(!word && str[i] != " " && str[i] != "\t") {
+						word = true;
+					}
+					if(word) {
+						returnStr += str[i];
+					}
+				}
+				word = false;
+				let index = returnStr.length - 1;
+				for(let i = returnStr.length - 1; i >= 0; i--) {
+					if(!word && returnStr[i] != " " && returnStr[i] != "\t") {
+						word = true;
+						index = i;
+					}
+				}
+				returnStr = returnStr.substring(0, index + 1);
+				return returnStr;
+			}
+			let componentName = trim(component.substring(0, component.indexOf("{")));
+			let componentProps = trim(component.substring(component.indexOf("{")));
+			let evalInContext = tApp.evalInContext("let _____tApp_____componentProps = " + componentProps + "; _____tApp_____componentProps", props);
+			let componentObject = tApp.evalInContext(`new ${componentName}({}, _____tApp_____parent)`, {_____tApp_____parent: parent})[0];
+			componentObject.props = evalInContext[0];
+			return tApp.compileComponent(componentObject, evalInContext[0]);
+		}
+	}
+	static compileTemplate(html, options, componentParent = "global") {
 		function convertTemplate(template, parameters, prefix) {
 			let keys = Object.keys(parameters);
 			for(let i = 0; i < keys.length; i++) {
@@ -430,12 +491,54 @@ class tApp {
 			returnStr = returnStr.substring(0, index + 1);
 			return returnStr;
 		}
+		function sanitizeNewLines(str) {
+			let newLineStack = [];
+			let newStrList = [];
+			let tmpLoader = "";
+			for(let i = 0; i < str.length; i++) {
+				if(newLineStack.length > 0 || (i > 820 && i < 880)) {
+				}
+				if(tmpLoader == "" && ["[", "]", "{", "}"].includes(str[i])) {
+					newStrList.push(str[i]);
+					tmpLoader = str[i];
+				} else if(tmpLoader == "{{{" || tmpLoader == "[[") {
+					if(tmpLoader == "{{{" && str[i] == "\n") {
+						newStrList.push(";");
+					} else if(tmpLoader == "[[" && str[i] == "\n") {
+						
+					} else {
+						newStrList.push(str[i]);
+					}
+					newLineStack.push(tmpLoader);
+					tmpLoader = "";
+				} else if((newLineStack[newLineStack.length - 1] == "{{{" && tmpLoader == "}}}") || (newLineStack[newLineStack.length - 1] == "[[" && tmpLoader == "]]")) {
+					newStrList.push(str[i]);
+					newLineStack.pop();
+					tmpLoader = "";
+				} else if(str[i] == tmpLoader[0]) {
+					newStrList.push(str[i]);
+					tmpLoader += str[i];
+				} else {
+					tmpLoader = "";
+					if(newLineStack[newLineStack.length - 1] == "{{{" && str[i] == "\n") {
+						newStrList.push(";");
+					} else if(newLineStack[newLineStack.length - 1] == "[[" && str[i] == "\n") {
+						
+					} else {
+						newStrList.push(str[i]);
+					}
+				}
+			}
+			let newStr = newStrList.join("");
+			return newStr;
+		}
 		let it = html.matchAll(new RegExp("{#.+?(?=#})#}", "g"));
 		let next = it.next();
 		while(!next.done) {
 			html = html.replace(next.value[0], "");
 			next = it.next();
 		}
+		html = sanitizeNewLines(html);
 		html = html.replaceAll("{{\\{", "{{\\\\{");
 		html = html.replaceAll("{{{", "{{\\{");
 		html = convertTemplate(html, options, "");
@@ -444,6 +547,7 @@ class tApp {
 		let splitLines = html.split("\n");
 		let tokenStack = [];
 		let stateStack = [];
+		let newList = [];
 		let newHTML = "";
 		for(let i = 0; i < splitLines.length; i++) {
 			let trimmed = trim(splitLines[i]);
@@ -528,9 +632,16 @@ class tApp {
 					newRes = newRes.replace(next.value[0], contextEval[0]);
 					next = it.next();
 				}
-				newHTML += newRes + "\n";
+				it = newRes.matchAll(new RegExp("\[\[[\\s|\\t]*(.+?(?=\]\]))[\\s|\\t]*\]\]", "g"));
+				next = it.next();
+				while(!next.done) {
+					newRes = newRes.replace(next.value[0], tApp.compileComponent(next.value[1], options, componentParent));
+					next = it.next();
+				}
+				newList.push(newRes);
 			}
 		}
+		newHTML = newList.join("\n");
 		newHTML = newHTML.replaceAll("{\\%", "{%");
 		newHTML = newHTML.replaceAll("{{\\{", "{{{");
 		return newHTML;
@@ -721,3 +832,94 @@ class tApp {
 		});
 	}
 }
+
+tApp.Component = class {
+	#id;
+	#parent;
+	#children;
+	constructor(state, parent = "global") {
+		this.#id = new Date().toJSON() + "::" + Math.random().toString(36).substr(2) + "::" + Math.random().toString(36).substr(2) + "::" + Math.random().toString(36).substr(2) + "::" + Math.random().toString(36).substr(2);
+		if(parent != "") {
+			if(typeof parent == "string") {
+				this.#parent = tApp.getComponent(parent);
+			} else {
+				this.#parent = parent;
+			}
+			this.#parent.addChild(this);
+		} else {
+			this.#parent = null;
+		}
+		this.#children = [];
+		this.state = {};
+		this.props = {};
+		if(state != null && typeof state == "object") {
+			for(let property in state) {
+				this.state[property] = state[property]
+			}
+		}
+	}
+	get id() {
+		return this.#id;
+	}
+	get parent() {
+		return this.#parent;
+	}
+	get parentId() {
+		return this.#parent.id;
+	}
+	get children() {
+		return this.#children;
+	}
+	get childrenIds() {
+		return this.#children.map((child) => {return child.id});
+	}
+	addChild(child) {
+		if(this.#children.includes(child)) {
+			return false;
+		} else {
+			this.#children.push(child);
+			return true;
+		}
+	}
+	setState(key, val) {
+		function recursivelySetState(key, val, state) {
+			if(key.includes(".")) {
+				let keyList = key.split(".");
+				let thisKey = keyList.splice(0, 1);
+				if(state[thisKey] == null) {
+					state[thisKey] = {};
+				}
+				state[thisKey] = recursivelySetState(keyList.join("."), val, state[thisKey]);
+			} else {
+				state[key] = val;
+			}
+			return state;
+		}
+		this.state = recursivelySetState(key, val, this.state);
+		tApp.updateComponent(this);
+		return val;
+	}
+	render(props) {
+		throw "tAppComponentError: Render method must be overridden.";
+	}
+	toString() {
+		return tApp.compileComponent(this);
+	}
+}
+
+tApp.GlobalComponent = (function() {
+	class GlobalComponent extends tApp.Component {
+		#id;
+		constructor(state, parent) {
+			super(state, "");
+		}
+		render(props) {
+			return "";
+		}
+		get id() {
+			return "global";
+		}
+	}
+	return new GlobalComponent();
+})();
+tApp.compileComponent(tApp.GlobalComponent);

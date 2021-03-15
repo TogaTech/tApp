@@ -13,6 +13,115 @@ tApp.configure({
 	}
 });
 
+class ListElement extends tApp.Component {
+    constructor(state, parent) {
+        super(state, parent);
+    }
+    render(props) {
+        return "<li>{{ props.value }}</li>";
+    }
+}
+
+class ListComponent extends tApp.Component {
+    constructor(state, parent) {
+        super(state, parent);
+    }
+    render(props) {
+	    let returnStr = "";
+	    for(let i = 0; i < props.elements.length; i++) {
+		    returnStr += `	[[ ListElement{value: "${props.elements[i]}"} ]]\n`;
+	    }
+        return "<ul>\n" + returnStr + "</ul>";
+    }
+}
+
+class Counter extends tApp.Component {
+	constructor(state, parent) {
+		super(state, parent);
+		if(this.state.count == null) {
+			this.state.count = 0;
+		}
+	}
+    render(props) {
+	    return (`
+<div>
+	[[
+		CounterButton
+		{
+			text: "-",
+			incrementor: -1
+		}
+	]]
+	[[
+		CounterText
+		{}
+	]]
+	[[
+		CounterButton
+		{
+			text: "+",
+			incrementor: 1
+		}
+	]]
+</div>
+`);
+    }
+}
+
+class CounterPreserved extends tApp.Component {
+	constructor(state, parent) {
+		super(state, parent);
+		if(this.state.count == null) {
+			this.state.count = 0;
+		}
+		if(this.state.counterButtonDown == null) {
+			this.state.counterButtonDown = new CounterButton({
+				text: "-",
+				incrementor: -1
+			}, this);
+		}
+		if(this.state.counterText == null) {
+			this.state.counterText = new CounterText({}, this);
+		}
+		if(this.state.counterButtonUp == null) {
+			this.state.counterButtonUp = new CounterButton({
+				text: "+",
+				incrementor: 1
+			}, this);
+		}
+	}
+    render(props) {
+	    return `<div>${this.state.counterButtonDown}${this.state.counterText}${this.state.counterButtonUp}</div>`;
+    }
+}
+
+class CounterButton extends tApp.Component {
+	constructor(state, parent) {
+		super(state, parent);
+	}
+    render(props) {
+	    if(this.state.text == null) {
+	    	this.state.text = props.text;
+	    }
+	    if(this.state.incrementor == null) {
+	    	this.state.incrementor = props.incrementor;
+	    }
+	    return `<button onclick="{{_this}}.update()">{{ state.text }}</button>`;
+    }
+    update() {
+	    this.parent.setState("count", this.parent.state.count + this.state.incrementor);
+    }
+}
+
+class CounterText extends tApp.Component {
+	constructor(state, parent) {
+		super(state, parent);
+	}
+    render(props) {
+	    return `<p style="display: inline-block; margin: 10px;">{{parent.state.count}}</p>`;
+    }
+}
+
 tApp.route("/", function(request) {
 	tApp.redirect("#/");
 });
@@ -65,6 +174,13 @@ tApp.route("#/template", function(request) {
 			return returnStr;
 		},
 		i: 0
+	});
+});
+
+let counter = new CounterPreserved();
+tApp.route("#/components", function(request) {
+	tApp.renderTemplate("./views/components.html", {
+		counter: counter.toString()
 	});
 });
 
