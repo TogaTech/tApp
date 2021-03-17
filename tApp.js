@@ -8,7 +8,7 @@ class tApp {
 	static database;
 	static currentHash = "/";
 	static get version() {
-		return "v0.10.1";
+		return "v0.10.2";
 	}
 	static configure(params) {
 		if(params == null) {
@@ -432,22 +432,32 @@ class tApp {
 				return new DOMParser().parseFromString(html, "text/html").body.childNodes[0];
 			}
 		}
+		function compareNode(before, after) {
+			if(before.nodeName != after.nodeName) {
+				return false;
+			}
+			return true;
+		}
 		function compareChildren(before, after) {
 			if(before.childNodes.length != after.childNodes.length) {
 				return false;
 			}
 			for(let i = 0; i < before.childNodes.length; i++) {
-				if(before.childNodes[i].nodeName != after.childNodes[i].nodeName) {
-					return false;
-				}
-				if(before.childNodes[i].getAttribute("tapp-component") != after.childNodes[i].getAttribute("tApp-component")) {
+				if(!compareNode(before, after)) {
 					return false;
 				}
 			}
 			return true;
 		}
 		function convertNode(before, after) {
-			if(after.attributes != null) {
+			if(before.attributes != null && after.attributes != null) {
+				for(let i = 0; i < before.attributes.length; i++) {
+					if(before.attributes.item(i).nodeName == "value") {
+						before.value = "";
+					} else {
+						before.removeAttribute(before.attributes.item(i).nodeName);
+					}
+				}
 				for(let i = 0; i < after.attributes.length; i++) {
 					if(after.attributes.item(i).nodeName == "value") {
 						before.value = after.value;
@@ -491,8 +501,6 @@ class tApp {
 						pointerBefore++;
 						pointerAfter++;
 					}
-					//console.log("before", beforeChildren, beforeChildren.map(child => {if(child != null){ return child.data }else{ return "null"}}));
-					//console.log("after", afterChildren, afterChildren.map(child => {if(child != null){ return child.data }else{ return "null"}}));
 					for(let i = 0; i < beforeChildren.length; i++) {
 						let nullBefore = beforeChildren.length == beforeChildren.filter(el => el == null || el.nodeName == "#text").length;
 						if(beforeChildren[i] == null && afterChildren[i] == null) {
@@ -532,6 +540,9 @@ class tApp {
 		let els = document.querySelectorAll(`[tapp-component="${component.id}"]`);
 		for(let i = 0; i < els.length; i++) {
 			convertNode(els[i], compiled);
+		}
+		for(let i = 0; i < component.children.length; i++) {
+			tApp.updateComponent(component.children[i]);
 		}
 	}
 	static compileComponent(component, props = {}, parent = "global") {
@@ -644,8 +655,6 @@ class tApp {
 			let newStrList = [];
 			let tmpLoader = "";
 			for(let i = 0; i < str.length; i++) {
-				if(newLineStack.length > 0 || (i > 820 && i < 880)) {
-				}
 				if(tmpLoader == "" && ["[", "]", "{", "}"].includes(str[i])) {
 					newStrList.push(str[i]);
 					tmpLoader = str[i];
@@ -658,16 +667,28 @@ class tApp {
 						newStrList.push(str[i]);
 					}
 					newLineStack.push(tmpLoader);
-					tmpLoader = "";
+					if(["[", "]", "{", "}"].includes(str[i])) {
+						tmpLoader = str[i];
+					} else {
+						tmpLoader = "";
+					}
 				} else if((newLineStack[newLineStack.length - 1] == "{{{" && tmpLoader == "}}}") || (newLineStack[newLineStack.length - 1] == "[[" && tmpLoader == "]]")) {
 					newStrList.push(str[i]);
 					newLineStack.pop();
-					tmpLoader = "";
+					if(["[", "]", "{", "}"].includes(str[i])) {
+						tmpLoader = str[i];
+					} else {
+						tmpLoader = "";
+					}
 				} else if(str[i] == tmpLoader[0]) {
 					newStrList.push(str[i]);
 					tmpLoader += str[i];
 				} else {
-					tmpLoader = "";
+					if(["[", "]", "{", "}"].includes(str[i])) {
+						tmpLoader = str[i];
+					} else {
+						tmpLoader = "";
+					}
 					if(newLineStack[newLineStack.length - 1] == "{{{" && str[i] == "\n") {
 						newStrList.push(";");
 					} else if(newLineStack[newLineStack.length - 1] == "[[" && str[i] == "\n") {
@@ -780,7 +801,7 @@ class tApp {
 					newRes = newRes.replace(next.value[0], contextEval[0]);
 					next = it.next();
 				}
-				it = newRes.matchAll(new RegExp("\[\[[\\s|\\t]*(.+?(?=\]\]))[\\s|\\t]*\]\]", "g"));
+				it = newRes.matchAll(new RegExp("\\[\\[[\\s|\\t]*(.+?(?=\\]\\]))[\\s|\\t]*\\]\\]", "g"));
 				next = it.next();
 				while(!next.done) {
 					newRes = newRes.replace(next.value[0], tApp.compileComponent(next.value[1], options, componentParent));
@@ -1048,7 +1069,7 @@ tApp.Component = class {
 			return state;
 		}
 		this.state = recursivelySetState(key, val, this.state);
-		tApp.updateComponent(this);
+		tApp.updateComponent(tApp.GlobalComponent);
 		return val;
 	}
 	render(props) {

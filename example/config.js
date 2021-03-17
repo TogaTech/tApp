@@ -46,26 +46,22 @@ class Counter extends tApp.Component {
 	    for(let i = 0; i < this.children.length; i++) {
 		    this.children[i].destroy();
 	    }
-	    return (`<div>
-	[[
+	    return (`<div>[[
 		CounterButton
 		{
 			text: "-",
 			incrementor: -1
 		}
-	]]
-	[[
+	]][[
 		CounterText
 		{}
-	]]
-	[[
+	]][[
 		CounterButton
 		{
 			text: "+",
 			incrementor: 1
 		}
-	]]
-</div>`);
+	]]</div>`);
     }
 }
 
