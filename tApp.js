@@ -9,7 +9,7 @@ class tApp {
 	static currentHash = "/";
 	static debugComponentTiming;
 	static get version() {
-		return "v0.10.3";
+		return "v0.10.4";
 	}
 	static configure(params) {
 		if(params == null) {
@@ -1050,7 +1050,7 @@ tApp.Component = class {
 	#children;
 	constructor(state, parent = "global") {
 		this.#id = new Date().toJSON() + "::" + Math.random().toString(36).substr(2) + "::" + Math.random().toString(36).substr(2);
-		if(parent != "") {
+		if(parent != null) {
 			if(typeof parent == "string") {
 				this.#parent = tApp.getComponent(parent);
 			} else {
@@ -1144,7 +1144,7 @@ tApp.GlobalComponent = (function() {
 	class GlobalComponent extends tApp.Component {
 		#id;
 		constructor(state, parent) {
-			super(state, "");
+			super(state, null);
 		}
 		render(props) {
 			return "<div></div>";
