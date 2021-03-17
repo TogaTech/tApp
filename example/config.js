@@ -46,8 +46,7 @@ class Counter extends tApp.Component {
 	    for(let i = 0; i < this.children.length; i++) {
 		    this.children[i].destroy();
 	    }
-	    return (`
-<div>
+	    return (`<div>
 	[[
 		CounterButton
 		{
@@ -66,8 +65,7 @@ class Counter extends tApp.Component {
 			incrementor: 1
 		}
 	]]
-</div>
-`);
+</div>`);
     }
 }
 
@@ -122,6 +120,49 @@ class CounterText extends tApp.Component {
 	}
     render(props) {
 	    return `<p style="display: inline-block; margin: 10px;">{{parent.state.count}}</p>`;
+    }
+}
+
+class Text extends tApp.Component {
+	constructor(state, parent) {
+		super(state, parent);
+		if(this.state.text == null) {
+			this.state.text = "";
+		}
+		if(this.state.textInput1 == null) {
+			this.state.textInput1 = new TextInput({}, this);
+		}
+		if(this.state.textInput2 == null) {
+			this.state.textInput2 = new TextInput({}, this);
+		}
+		if(this.state.textDisplay == null) {
+			this.state.textDisplay = new TextDisplay({}, this);
+		}
+	}
+    render(props) {
+	    if(this.state.text == "hello" || this.state.text == '"hello"') {
+		    return `<div><p>HI! <span>hello there</span></p>${this.state.textDisplay}<p>HI! <span>hello there</span></p>${this.state.textInput1}<p>HI! <span>hello there</span></p>${this.state.textInput2}<p>HI! <span>hello there</span></p></div>`;
+	    } else {
+	    	return `<div>${this.state.textDisplay}${this.state.textInput1}${this.state.textInput2}</div>`;
+	    }
+    }
+}
+
+class TextInput extends tApp.Component {
+	constructor(state, parent) {
+		super(state, parent);
+	}
+    render(props) {
+	    return `<input oninput="{{_this}}.parent.setState('text', this.value);" value="{{{ tApp.escape(parent.state.text) }}}" />`;
+    }
+}
+
+class TextDisplay extends tApp.Component {
+	constructor(state, parent) {
+		super(state, parent);
+	}
+    render(props) {
+	    return `<p>{{{ tApp.escape(parent.state.text) }}}</p>`;
     }
 }
 
@@ -181,9 +222,11 @@ tApp.route("#/template", function(request) {
 });
 
 let counter = new CounterPreserved();
+let textComponent = new Text();
 tApp.route("#/components", function(request) {
 	tApp.renderTemplate("./views/components.html", {
-		counter: counter.toString()
+		counter: counter.toString(),
+		text: textComponent.toString()
 	});
 });
 

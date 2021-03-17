@@ -8,7 +8,7 @@ class tApp {
 	static database;
 	static currentHash = "/";
 	static get version() {
-		return "v0.10.0";
+		return "v0.10.1";
 	}
 	static configure(params) {
 		if(params == null) {
@@ -362,6 +362,18 @@ class tApp {
 			});
 		});
 	}
+	static escape(string) {
+		let entityMap = {
+			"&": "&amp;",
+			"<": "&lt;",
+			">": "&gt;",
+			'"': '&quot;',
+			"'": '&#39;'
+		};
+		return string.replace(/[&<>"']/g, function (s) {
+			return entityMap[s];
+		});
+	}
 	static eval(code) {
 		return (function(code) {
 			return eval(code);
@@ -413,13 +425,130 @@ class tApp {
 		}
 	}
 	static updateComponent(component) {
-		let compiled = tApp.compileComponent(component, component.props, component.parent);
+		function htmlToDOM(html) {
+			if(html.includes("<body")) {
+				return new DOMParser().parseFromString(html, "text/html").childNodes[0];
+			} else {
+				return new DOMParser().parseFromString(html, "text/html").body.childNodes[0];
+			}
+		}
+		function compareChildren(before, after) {
+			if(before.childNodes.length != after.childNodes.length) {
+				return false;
+			}
+			for(let i = 0; i < before.childNodes.length; i++) {
+				if(before.childNodes[i].nodeName != after.childNodes[i].nodeName) {
+					return false;
+				}
+				if(before.childNodes[i].getAttribute("tapp-component") != after.childNodes[i].getAttribute("tApp-component")) {
+					return false;
+				}
+			}
+			return true;
+		}
+		function convertNode(before, after) {
+			if(after.attributes != null) {
+				for(let i = 0; i < after.attributes.length; i++) {
+					if(after.attributes.item(i).nodeName == "value") {
+						before.value = after.value;
+					} else {
+						before.setAttribute(after.attributes.item(i).nodeName, after.attributes.item(i).nodeValue);
+					}
+				}
+			}
+			if(before.nodeName == "#text" && after.nodeName == "#text") {
+				before.textContent = after.textContent;
+			}
+			
+			if(after.childNodes.length == 0 || after.childNodes.length == 1 && after.childNodes[0].nodeName == "#text") {
+				before.innerHTML = after.innerHTML;
+			} else {
+				if(compareChildren(before, after)) {
+					for(let i = 0; i < after.childNodes.length; i++) {
+						convertNode(before.childNodes[i], after.childNodes[i])
+					}
+				} else {
+					let beforeChildren = [...before.childNodes];
+					let afterChildren = [...after.childNodes];
+					let beforeChildrenPersist = [...before.childNodes];
+					let afterChildrenPersist = [...after.childNodes];
+					let pointerBefore = 0;
+					let pointerAfter = 0;
+					while(pointerBefore < beforeChildren.length || pointerAfter < afterChildren.length) {
+						if(pointerBefore >= beforeChildren.length) {
+							beforeChildren.splice(pointerBefore, 0, null);
+						} else if(pointerAfter >= afterChildren.length) {
+							afterChildren.splice(pointerAfter, 0, null);
+						} else {
+							if(beforeChildren[pointerBefore].nodeName != afterChildren[pointerAfter].nodeName) {
+								if(beforeChildrenPersist.length > afterChildrenPersist.length) {
+									afterChildren.splice(pointerAfter, 0, null);
+								} else {
+									beforeChildren.splice(pointerBefore, 0, null);
+								}
+							}
+						}
+						pointerBefore++;
+						pointerAfter++;
+					}
+					//console.log("before", beforeChildren, beforeChildren.map(child => {if(child != null){ return child.data }else{ return "null"}}));
+					//console.log("after", afterChildren, afterChildren.map(child => {if(child != null){ return child.data }else{ return "null"}}));
+					for(let i = 0; i < beforeChildren.length; i++) {
+						let nullBefore = beforeChildren.length == beforeChildren.filter(el => el == null || el.nodeName == "#text").length;
+						if(beforeChildren[i] == null && afterChildren[i] == null) {
+						} else if(beforeChildren[i] == null) {
+							if(nullBefore) {
+								before.appendChild(afterChildren[i]);
+							} else {
+								let nextNotNull;
+								for(let j = i; nextNotNull == null && j < beforeChildren.length; j++) {
+									if(beforeChildren[j] != null) {
+										nextNotNull = beforeChildren[j];
+									}
+								}
+								if(nextNotNull == null) {
+									let prevNotNull;
+									for(let j = i; prevNotNull == null && j < beforeChildren.length; j--) {
+										if(beforeChildren[j] != null) {
+											prevNotNull = beforeChildren[j];
+										}
+									}
+									prevNotNull.insertAdjacentElement("afterend", afterChildren[i]);
+								} else {
+									nextNotNull.insertAdjacentElement("beforebegin", afterChildren[i]);
+								}
+							}
+						} else if(afterChildren[i] == null) {
+							beforeChildren[i].remove();
+							beforeChildren[i] = null;
+						} else {
+							convertNode(beforeChildren[i], afterChildren[i]);
+						}
+					}
+				}
+			}
+		}
+		let compiled = htmlToDOM(tApp.compileComponent(component, component.props, component.parent));
 		let els = document.querySelectorAll(`[tapp-component="${component.id}"]`);
 		for(let i = 0; i < els.length; i++) {
-			els[i].outerHTML = compiled;
+			convertNode(els[i], compiled);
 		}
 	}
 	static compileComponent(component, props = {}, parent = "global") {
+		function htmlToDOM(html) {
+			if(html.includes("<body")) {
+				return new DOMParser().parseFromString(html, "text/html").childNodes[0];
+			} else {
+				return new DOMParser().parseFromString(html, "text/html").body.childNodes[0];
+			}
+		}
+		function htmlToDOMCount(html) {
+			if(html.includes("<body")) {
+				return new DOMParser().parseFromString(html, "text/html").childNodes.length;
+			} else {
+				return new DOMParser().parseFromString(html, "text/html").body.childNodes.length;
+			}
+		}
 		if(component instanceof tApp.Component) {
 			tApp.components[component.id] = component;
 			if(typeof props == "string") {
@@ -430,7 +559,14 @@ class tApp {
 			if(component.parent != null) {
 				parentState = component.parent.state;
 			}
-			return tApp.compileTemplate(rendered.replace(`>`, ` tapp-component="${component.id}">`), {
+			let count = htmlToDOMCount(rendered);
+			if(count != 1) {
+				throw "tAppComponentError: Component render output must contain exactly one node/element but can contain subnodes/subelements. To resolve this issue, wrap the entire output of the render in a div or another grouping element. If you only have one node/element, unintentional whitespace at the beginning or end of the render output could be the source of the issue since whitespace can be interpreted as a text node/element.";
+			}
+			let domRendered = htmlToDOM(rendered);
+			domRendered.setAttribute("tapp-component", component.id);
+			rendered = domRendered.outerHTML;
+			return tApp.compileTemplate(rendered, {
 				props: props,
 				state: component.state,
 				parent: {
@@ -939,7 +1075,7 @@ tApp.GlobalComponent = (function() {
 			super(state, "");
 		}
 		render(props) {
-			return "";
+			return "<div></div>";
 		}
 		get id() {
 			return "global";
