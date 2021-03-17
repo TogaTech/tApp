@@ -7,8 +7,9 @@ class tApp {
 	static started = false;
 	static database;
 	static currentHash = "/";
+	static debugComponentTiming;
 	static get version() {
-		return "v0.10.2";
+		return "v0.10.3";
 	}
 	static configure(params) {
 		if(params == null) {
@@ -425,6 +426,11 @@ class tApp {
 		}
 	}
 	static updateComponent(component) {
+		let updateStartTime;
+		if(tApp.debugComponentTiming != null && component.id == "global") {
+			updateStartTime = new Date().getTime();
+		}
+		component.componentWillUpdate();
 		function htmlToDOM(html) {
 			if(html.includes("<body")) {
 				return new DOMParser().parseFromString(html, "text/html").childNodes[0];
@@ -451,18 +457,47 @@ class tApp {
 		}
 		function convertNode(before, after) {
 			if(before.attributes != null && after.attributes != null) {
-				for(let i = 0; i < before.attributes.length; i++) {
-					if(before.attributes.item(i).nodeName == "value") {
-						before.value = "";
-					} else {
-						before.removeAttribute(before.attributes.item(i).nodeName);
+				let removeAttributes = [];
+				let updateAttributes = [];
+				let beforeAttributes = [...before.attributes];
+				let afterAttributes = [...after.attributes];
+				if((after.value != null && after.value != "") || (before.value != null && before.value != "")) {
+					if((after.value == "" || after.value == null) && (before.value != "" || before.value != null)) {
+						removeAttributes.push({nodeName: "value", nodeValue: ""});
+					} else if(after.value != before.value) {
+						updateAttributes.push({nodeName: "value", nodeValue: after.value});
 					}
 				}
-				for(let i = 0; i < after.attributes.length; i++) {
-					if(after.attributes.item(i).nodeName == "value") {
-						before.value = after.value;
+				for(let i = 0; i < beforeAttributes.length; i++) {
+					if(beforeAttributes[i].nodeName != "value") {
+						let afterAttribute = afterAttributes.find(attribute => attribute.nodeName == beforeAttributes[i].nodeName);
+						if(afterAttribute == null) {
+							removeAttributes.push(beforeAttributes[i]);
+						} else if(afterAttribute.nodeValue != beforeAttributes[i].nodeValue) {
+							updateAttributes.push(beforeAttributes[i]);
+						}
+					}
+				}
+				for(let i = 0; i < afterAttributes.length; i++) {
+					if(afterAttributes[i].nodeName != "value") {
+						let beforeAttribute = beforeAttributes.find(attribute => attribute.nodeName == afterAttributes[i].nodeName);
+						if(beforeAttribute == null) {
+							updateAttributes.push(afterAttributes[i]);
+						}
+					}
+				}
+				for(let i = 0; i < removeAttributes.length; i++) {
+					if(removeAttributes[i].nodeName == "value") {
+						before.value = "";
 					} else {
-						before.setAttribute(after.attributes.item(i).nodeName, after.attributes.item(i).nodeValue);
+						before.removeAttribute(removeAttributes[i].nodeName);
+					}
+				}
+				for(let i = 0; i < updateAttributes.length; i++) {
+					if(updateAttributes[i].nodeName == "value") {
+						before.value = updateAttributes[i].nodeValue;
+					} else {
+						before.setAttribute(updateAttributes[i].nodeName, updateAttributes[i].nodeValue);
 					}
 				}
 			}
@@ -543,6 +578,13 @@ class tApp {
 		}
 		for(let i = 0; i < component.children.length; i++) {
 			tApp.updateComponent(component.children[i]);
+		}
+		if(tApp.debugComponentTiming != null && component.id == "global") {
+			if(typeof tApp.debugComponentTiming == "function") {
+				tApp.debugComponentTiming((new Date().getTime() - updateStartTime))
+			} else if(tApp.debugComponentTiming) {
+				console.log((new Date().getTime() - updateStartTime) + "ms");
+			}
 		}
 	}
 	static compileComponent(component, props = {}, parent = "global") {
@@ -1039,9 +1081,13 @@ tApp.Component = class {
 	get children() {
 		return this.#children;
 	}
-	clearChildren() {
-		this.#children = [];
-		return true;
+	removeChild(child) {
+		if(this.#children.indexOf(child) > -1) {
+			this.#children.splice(this.#children.indexOf(child), 1);
+			return true;
+		} else {
+			return false;
+		}
 	}
 	get childrenIds() {
 		return this.#children.map((child) => {return child.id});
@@ -1075,13 +1121,18 @@ tApp.Component = class {
 	render(props) {
 		throw "tAppComponentError: Render method must be overridden.";
 	}
+	componentWillUpdate() {
+		
+	}
 	destroy() {
-		for(let i = 0; i < this.#children.length; i++) {
-			this.#children[i].destroy();
+		while(this.#children.length > 0) {
+			this.#children[0].destroy();
 		}
-		this.#children = [];
+		if(this.#parent != null) {
+			this.#parent.removeChild(this);
+		}
 		this.#parent = null;
-		tApp.removeComponent(this.#id);
+		tApp.removeComponent(this.id);
 		return true;
 	}
 	toString() {

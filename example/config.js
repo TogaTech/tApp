@@ -42,10 +42,12 @@ class Counter extends tApp.Component {
 			this.state.count = 0;
 		}
 	}
-    render(props) {
-	    for(let i = 0; i < this.children.length; i++) {
-		    this.children[i].destroy();
+	componentWillUpdate() {
+		while(this.children.length > 0) {
+		    this.children[0].destroy();
 	    }
+	}
+    render(props) {
 	    return (`<div>[[
 		CounterButton
 		{
@@ -219,6 +221,10 @@ tApp.route("#/template", function(request) {
 
 let counter = new CounterPreserved();
 let textComponent = new Text();
+
+tApp.debugComponentTiming = (time) => {
+	document.querySelector("#timing").innerHTML = time + "ms";
+}
 tApp.route("#/components", function(request) {
 	tApp.renderTemplate("./views/components.html", {
 		counter: counter.toString(),
