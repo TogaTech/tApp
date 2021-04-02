@@ -9,7 +9,7 @@ class tApp {
 	static currentHash = "/";
 	static debugComponentTiming;
 	static get version() {
-		return "v0.10.8";
+		return "v0.10.9";
 	}
 	static configure(params) {
 		if(params == null) {
@@ -87,6 +87,7 @@ class tApp {
 		} else {
 			throw "tAppError: Invalid path, the path can only be \"/\" or start with \"#\".";
 		}
+		tApp.updatePage(window.location.hash);
 	}
 	static getCachedPage(fullPath) {
 		return new Promise((resolve, reject) => {
@@ -375,6 +376,20 @@ class tApp {
 			return entityMap[s];
 		});
 	}
+	static unescape(string) {
+		let entityMap = {
+			"&lt;": "<",
+			"&gt;": ">",
+			'&quot;': '"',
+			'&#39;': "'",
+			"&amp;": "&"
+		};
+		let keys = Object.keys(entityMap);
+		for(let i = 0; i < keys.length; i++) {
+			string = string.replaceAll(keys[i], entityMap[keys[i]]);
+		}
+		return string;
+	}
 	static eval(code) {
 		return (function(code) {
 			return eval(code);
@@ -562,28 +577,20 @@ class tApp {
 								} else {
 									let nextNotNull;
 									for(let j = i; nextNotNull == null && j < beforeChildren.length; j++) {
-										if(beforeChildren[j] != null && beforeChildren[j].nodeName != "#text") {
+										if(beforeChildren[j] != null) {
 											nextNotNull = beforeChildren[j];
 										}
 									}
 									if(nextNotNull == null) {
 										let prevNotNull;
 										for(let j = i; prevNotNull == null && j < beforeChildren.length; j--) {
-											if(beforeChildren[j] != null && beforeChildren[j].nodeName != "#text") {
+											if(beforeChildren[j] != null) {
 												prevNotNull = beforeChildren[j];
 											}
 										}
-										if(afterChildren[i].nodeName == "#text") {
-											prevNotNull.insertAdjacentText("afterend", afterChildren[i].nodeValue);
-										} else {
-											prevNotNull.insertAdjacentElement("afterend", afterChildren[i]);
-										}
+										prevNotNull.after(afterChildren[i]);
 									} else {
-										if(afterChildren[i].nodeName == "#text") {
-											nextNotNull.insertAdjacentText("beforebegin", afterChildren[i].nodeValue);
-										} else {
-											nextNotNull.insertAdjacentElement("beforebegin", afterChildren[i]);
-										}
+										nextNotNull.before(afterChildren[i]);
 									}
 								}
 							} else if(afterChildren[i] == null) {
@@ -652,7 +659,7 @@ class tApp {
 			}
 			let domRendered = htmlToDOM(rendered);
 			domRendered.setAttribute("tapp-component", component.id);
-			rendered = domRendered.outerHTML;
+			rendered = tApp.unescape(domRendered.outerHTML);
 			return tApp.compileTemplate(rendered, {
 				props: props,
 				state: component.state,
@@ -738,7 +745,7 @@ class tApp {
 					tmpLoader = str[i];
 				} else if(tmpLoader == "{{{" || tmpLoader == "[[") {
 					if(tmpLoader == "{{{" && str[i] == "\n") {
-						newStrList.push(";");
+						//newStrList.push(";");
 					} else if(tmpLoader == "[[" && str[i] == "\n") {
 						
 					} else {
@@ -768,7 +775,7 @@ class tApp {
 						tmpLoader = "";
 					}
 					if(newLineStack[newLineStack.length - 1] == "{{{" && str[i] == "\n") {
-						newStrList.push(";");
+						//newStrList.push(";");
 					} else if(newLineStack[newLineStack.length - 1] == "[[" && str[i] == "\n") {
 						
 					} else {
