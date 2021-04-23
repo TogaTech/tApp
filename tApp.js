@@ -9,7 +9,7 @@ class tApp {
 	static currentHash = "/";
 	static debugComponentTiming;
 	static get version() {
-		return "v0.10.9";
+		return "v0.10.10";
 	}
 	static configure(params) {
 		if(params == null) {
@@ -589,8 +589,10 @@ class tApp {
 											}
 										}
 										prevNotNull.after(afterChildren[i]);
+										beforeChildren[i] = afterChildren[i];
 									} else {
 										nextNotNull.before(afterChildren[i]);
+										beforeChildren[i] = afterChildren[i];
 									}
 								}
 							} else if(afterChildren[i] == null) {
@@ -659,7 +661,25 @@ class tApp {
 			}
 			let domRendered = htmlToDOM(rendered);
 			domRendered.setAttribute("tapp-component", component.id);
-			rendered = tApp.unescape(domRendered.outerHTML);
+			rendered = domRendered.outerHTML;
+			let it = rendered.matchAll(new RegExp("{{{[\\s|\\t]*(.+?(?=}}}))[\\s|\\t]*}}}", "g"));
+			let next = it.next();
+			while(!next.done) {
+				rendered = rendered.replace(next.value[0], tApp.unescape(next.value[0]));
+				next = it.next();
+			}
+			it = rendered.matchAll(new RegExp("{%[\\s|\\t]*(.+?(?=%}))[\\s|\\t]*%}", "g"));
+			next = it.next();
+			while(!next.done) {
+				rendered = rendered.replace(next.value[0], tApp.unescape(next.value[0]));
+				next = it.next();
+			}
+			it = rendered.matchAll(new RegExp("\\[\\[[\\s|\\t]*(.+?(?=\\]\\]))[\\s|\\t]*\\]\\]", "g"));
+			next = it.next();
+			while(!next.done) {
+				rendered = rendered.replace(next.value[0], tApp.unescape(next.value[0]));
+				next = it.next();
+			}
 			return tApp.compileTemplate(rendered, {
 				props: props,
 				state: component.state,
@@ -1180,6 +1200,9 @@ tApp.Component = class {
 	}
 	toString() {
 		return tApp.compileComponent(this);
+	}
+	elements() {
+		return document.querySelectorAll(`[tapp-component="${this.#id}"]`);
 	}
 }
 
