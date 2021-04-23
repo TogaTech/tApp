@@ -87,7 +87,9 @@ class tApp {
 		} else {
 			throw "tAppError: Invalid path, the path can only be \"/\" or start with \"#\".";
 		}
-		tApp.updatePage(window.location.hash);
+		if(tApp.started) {
+			tApp.updatePage(window.location.hash);
+		}
 	}
 	static getCachedPage(fullPath) {
 		return new Promise((resolve, reject) => {
