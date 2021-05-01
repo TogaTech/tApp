@@ -1,5 +1,5 @@
 # tApp
-A framework for building tApps (TogaTech Apps) using modern web technologies (HTML, CSS, JavaScript)
+An extremely lightweight, modern web framework for building offline-ready apps and websites using components, templates, and/or view files
 
 - [Why tApp](#why-tapp)
 - [Key Features](#key-features)
