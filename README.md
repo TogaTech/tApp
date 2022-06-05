@@ -122,7 +122,7 @@ A route is the end of the URL. The route can either be `/` or start with a `#`. 
 ```javascript
 {
 	type: "GET",
-	path: "#/custom/Custom%20Text%20Here"
+	path: "#/custom/Custom%20Text%20Here",
 	referrer: "#/",
 	data: {
 		text: "Custom Text Here"
